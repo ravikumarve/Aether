@@ -15,25 +15,36 @@ AETHER is a sophisticated multi-agent system that uses a "Distributed Intelligen
 ### Installation
 
 1. **Clone the repository**
-   ```bash
-   cd /media/matrix/DATA/opencode_projects/AETHER
-   ```
+    ```bash
+    cd /media/matrix/DATA/opencode_projects/AETHER
+    ```
 
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+2. **Create virtual environment** (recommended)
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    ```
 
-3. **Configure environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
+3. **Install dependencies**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-4. **Run the system**
-   ```bash
-   python src/main.py
-   ```
+4. **Configure environment variables** (optional for simulation-only mode)
+    ```bash
+    cp .env.example .env
+    # Edit .env with your configuration
+    ```
+
+5. **Run quick test** (verify installation)
+    ```bash
+    python src/main.py --no-mqtt --cycles 5
+    ```
+
+6. **Run smoke tests** (verify core functionality)
+    ```bash
+    python tests/test_basic.py
+    ```
 
 ### Basic Usage
 
@@ -48,6 +59,34 @@ python src/main.py --no-mqtt --cycles 10
 ```
 
 Enable verbose logging:
+```bash
+python src/main.py --verbose --cycles 5
+```
+
+### Troubleshooting
+
+**Python not found:**
+- Use `python3` instead of `python`
+- Ensure Python 3.11+ is installed: `python3 --version`
+
+**Dependencies fail to install:**
+- Create a virtual environment first (see step 2 above)
+- Use `--break-system-packages` flag only if necessary (not recommended)
+
+**MQTT connection fails:**
+- Use `--no-mqtt` flag for simulation-only mode
+- Check that MQTT broker is running: `mosquitto -v`
+- Verify MQTT settings in `.env` file
+
+**Import errors:**
+- Ensure virtual environment is activated
+- Verify all dependencies installed: `pip list`
+- Check Python version compatibility (3.11+)
+
+**Low confidence forecasts:**
+- This is normal during nighttime simulation (0 solar radiation)
+- System will continue operating with conservative estimates
+- Quality gates will fail but pipeline will continue
 ```bash
 python src/main.py --verbose --cycles 5
 ```
