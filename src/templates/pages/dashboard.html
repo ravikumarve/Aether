@@ -13,8 +13,7 @@
         </div>
         <button class="btn btn-primary"
                 hx-post="/api/v1/simulate"
-                hx-target="#dashboard-grid"
-                hx-swap="innerHTML"
+                hx-swap="none"
                 :disabled="running"
                 x-on:htmx:after-request="onSimComplete()">
             &#9654; Run Simulation
