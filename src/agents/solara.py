@@ -241,7 +241,7 @@ class SolaraAgent:
         # State
         self.current_forecast: Optional[PowerForecast] = None
         self.retry_count = 0
-        self.max_retries = 3
+        self.max_retries = int(os.getenv('SOLARA_MAX_RETRIES', '3'))
         
         # Configuration (from env with fallbacks)
         self.forecast_horizon = int(os.getenv('SOLARA_FORECAST_HORIZON', '24'))
