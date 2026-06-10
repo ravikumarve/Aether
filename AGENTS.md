@@ -1,6 +1,14 @@
 ---
 ## 💾 Session Memory
 
+### 2026-06-10 13:20 - Sprint AETHER-FE-1: Landing Page, License & Quick Start
+**Agent:** codebase
+**Summary:** Shipped frontend infrastructure for AETHER launch
+- **landing-1.html:** Activated pricing hrefs (Gumroad aether-sim/aether-pro), added OG meta tags (title, description), fixed mobile responsiveness (translateY reset at 768px), merged neural connection lines from landing-3 into particle canvas (emerald palette, 150px threshold)
+- **LICENSE:** Created MIT license with Commercial License clause blocking Orchestrator Pro tier
+- **QUICKSTART.md:** Created with install/run/verify workflow matching actual pipeline gate names
+- **Build Status:** All 5 quality gates PASS. 10 anomalies handled, 13 emergency responses, 24 cycles complete.
+
 ### 2026-06-10 11:21 - Sprint AETHER-CORE-1: Core Implementation Fixes
 **Agent:** codebase (Orchestrator)
 **Summary:** Fixed 4 core bugs making the simulation actually simulate across 24 cycles

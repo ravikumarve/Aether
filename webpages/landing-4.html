@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AETHER | Neural Habitat Governance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        void: '#020204',
+                        neonCyan: '#00f3ff',
+                        neonPurple: '#bc13fe',
+                        neonGreen: '#39ff14',
+                        neonAmber: '#ffaa00',
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        rajdhani: ['Rajdhani', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #020204;
+            color: #e2e8f0;
+            font-family: 'Rajdhani', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .neon-border-cyan {
+            border: 1px solid #00f3ff;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.3), inset 0 0 5px rgba(0, 243, 255, 0.2);
+        }
+
+        .neon-text-cyan {
+            color: #00f3ff;
+            text-shadow: 0 0 7px rgba(0, 243, 255, 0.8), 0 0 15px rgba(0, 243, 255, 0.5);
+        }
+
+        .neon-text-purple {
+            color: #bc13fe;
+            text-shadow: 0 0 7px rgba(188, 19, 254, 0.8), 0 0 15px rgba(188, 19, 254, 0.5);
+        }
+
+        .neon-glow-green {
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
+            border-color: rgba(57, 255, 20, 0.5);
+        }
+
+        .agent-card {
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .agent-card:hover {
+            transform: translateY(-10px) scale(1.02);
+        }
+
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            perspective: 1000px;
+        }
+
+        .citation {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: #4b5563;
+            vertical-align: super;
+            margin-left: 2px;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 243, 255, 0.1);
+            position: fixed;
+            z-index: 100;
+            top: 0;
+            animation: scan 4s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100vh; }
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-neonCyan selection:text-black">
+
+    <div class="grid-bg"></div>
+    <div class="scanline"></div>
+
+    <nav class="max-w-7xl mx-auto px-6 py-8 flex justify-between items-center relative z-10">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 neon-border-cyan flex items-center justify-center bg-cyan-950/20">
+                <span class="font-orbitron font-bold text-neonCyan text-2xl">A</span>
+            </div>
+            <span class="font-orbitron text-2xl font-black tracking-tighter neon-text-cyan">AETHER_CORE</span>
+        </div>
+        <div class="hidden md:flex gap-10 font-mono text-xs tracking-widest text-zinc-500">
+            <a href="#logic" class="hover:text-neonCyan transition-all">[ AGENT_LOGIC ]</a>
+            <a href="#workflow" class="hover:text-neonCyan transition-all">[ PROTOCOLS ]</a>
+            <a href="#stack" class="hover:text-neonCyan transition-all">[ TECH_STACK ]</a>
+        </div>
+        <a href="https://github.com/opencode/project-aether" class="px-6 py-2 border border-neonPurple text-neonPurple font-bold uppercase text-xs tracking-widest hover:bg-neonPurple hover:text-black transition-all">
+            Initialize_Repo <span class="citation"></span>
+        </a>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-6 pt-24 pb-20 relative z-10">
+        <div class="flex flex-col items-center text-center">
+            <div class="px-4 py-1 mb-8 border border-neonCyan/30 bg-cyan-950/10 text-neonCyan font-mono text-xs tracking-[0.3em] uppercase">
+                Autonomous Environmental & Thermal Habitat Efficiency Regulator <span class="citation"></span>
+            </div>
+            
+            <h1 class="font-orbitron text-6xl md:text-8xl font-black mb-6 leading-tight">
+                NEURAL HABITAT <br />
+                <span class="neon-text-purple">GOVERNANCE.</span>
+            </h1>
+            
+            <p class="text-xl md:text-2xl text-zinc-400 max-w-4xl font-light mb-12 leading-relaxed">
+                AETHER is an advanced multi-agent orchestration framework engineered to govern self-sustaining habitats in high-risk environments <span class="citation"></span>. By implementing a distributed intelligence model, the system manages the critical "Resource Paradox" between energy harvesting and biological life support.
+            </p>
+            
+            <div class="flex gap-8">
+                <button class="px-10 py-4 bg-neonCyan text-black font-orbitron font-bold text-sm tracking-widest shadow-[0_0_20px_rgba(0,243,255,0.5)] hover:scale-105 transition-all">
+                    START_SIMULATION <span class="citation"></span>
+                </button>
+                <button class="px-10 py-4 border border-zinc-700 text-zinc-400 font-orbitron font-bold text-sm tracking-widest hover:border-neonCyan hover:text-neonCyan transition-all">
+                    DOWNLOAD_SPEC <span class="citation"></span>
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-32 max-w-5xl mx-auto">
+            <div class="bg-void border border-zinc-800 rounded-sm overflow-hidden shadow-2xl">
+                <div class="flex items-center justify-between px-6 py-4 bg-zinc-900/50 border-b border-zinc-800">
+                    <div class="flex gap-3">
+                        <div class="w-3 h-3 rounded-full bg-red-900"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-900"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-900"></div>
+                    </div>
+                    <span class="font-mono text-xs text-zinc-600">root@latitude-3460:~/aether/src</span>
+                </div>
+                <div class="p-8 font-mono text-sm leading-relaxed">
+                    <p class="text-zinc-500 mb-2">// Initializing 5-Step Operational Workflow <span class="citation"></span></p>
+                    <p><span class="text-neonCyan">❯</span> python main.py --cycles 24 <span class="citation"></span></p>
+                    <p class="text-zinc-400 mt-4">[STEP 01] Environment variables loaded. Simulation engine online <span class="citation"></span>.</p>
+                    <p class="text-neonAmber">[STEP 02] Solara Audit: Solar flux analyzed. Battery forecast: 78% <span class="citation"></span>.</p>
+                    <p class="text-neonGreen">[STEP 03] Veridian Audit: Hydroponic nutrient delivery optimized <span class="citation"></span>.</p>
+                    <p class="text-neonCyan">[STEP 04] Hal-90 Mediation: Resource conflict resolution matrix applied <span class="citation"></span>.</p>
+                    <p class="text-zinc-400">[STEP 05] Continuous Loop: Monitoring inter-agent MQTT messaging <span class="citation"></span>.</p>
+                    <p class="text-neonPurple mt-4 animate-pulse">_SYSTEM_MONITORING_ACTIVE</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <section id="logic" class="max-w-7xl mx-auto px-6 py-32 border-t border-zinc-900">
+        <div class="mb-20 text-center">
+            <h2 class="font-orbitron text-4xl font-bold mb-4">DISTRIBUTED_INTELLIGENCE</h2>
+            <div class="w-32 h-1 bg-neonPurple mx-auto"></div>
+            <p class="text-zinc-500 font-mono text-sm mt-4 uppercase tracking-widest">Autonomous Cognitive Specifications <span class="citation"></span></p>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-10">
+            <div class="agent-card p-10 border border-zinc-800 rounded-lg relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-neonAmber/5 rounded-full -translate-y-16 translate-x-16 blur-2xl"></div>
+                <div class="w-14 h-14 bg-neonAmber/10 border border-neonAmber flex items-center justify-center text-neonAmber mb-8">
+                    <span class="text-2xl font-orbitron">S</span>
+                </div>
+                <h3 class="font-orbitron text-xl font-bold text-white mb-2">SOLARA <span class="citation"></span></h3>
+                <p class="font-mono text-xs text-neonAmber mb-6 uppercase tracking-widest">Energy Grid Optimizer <span class="citation"></span></p>
+                <p class="text-zinc-400 mb-8 leading-relaxed">
+                    Maintains habitat battery levels above 40% while maximizing total solar intake <span class="citation"></span>. Solara views inefficient power consumption as a systemic failure requiring immediate corrective inclination <span class="citation"></span>.
+                </p>
+                <div class="pt-6 border-t border-zinc-800 text-xs font-mono text-zinc-500">
+                    TOOLS: PowerGridAnalyzer, WeatherForecaster <span class="citation"></span>
+                </div>
+            </div>
+
+            <div class="agent-card p-10 border border-zinc-800 rounded-lg relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-neonGreen/5 rounded-full -translate-y-16 translate-x-16 blur-2xl"></div>
+                <div class="w-14 h-14 bg-neonGreen/10 border border-neonGreen flex items-center justify-center text-neonGreen mb-8">
+                    <span class="text-2xl font-orbitron">V</span>
+                </div>
+                <h3 class="font-orbitron text-xl font-bold text-white mb-2">VERIDIAN <span class="citation"></span></h3>
+                <p class="font-mono text-xs text-neonGreen mb-6 uppercase tracking-widest">Bio-Regenerative Supervisor <span class="citation"></span></p>
+                <p class="text-zinc-400 mb-8 leading-relaxed">
+                    Regulates O2/CO2 exchange rates and monitors complex hydroponic nutrient delivery <span class="citation"></span>. Veridian prioritizes the health of oxygen-producing biomass over non-essential lighting systems <span class="citation"></span>.
+                </p>
+                <div class="pt-6 border-t border-zinc-800 text-xs font-mono text-zinc-500">
+                    TOOLS: BiomassSensor, AtmosphericScrubber <span class="citation"></span>
+                </div>
+            </div>
+
+            <div class="agent-card p-10 border border-zinc-800 rounded-lg relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-neonCyan/5 rounded-full -translate-y-16 translate-x-16 blur-2xl"></div>
+                <div class="w-14 h-14 bg-neonCyan/10 border border-neonCyan flex items-center justify-center text-neonCyan mb-8">
+                    <span class="text-2xl font-orbitron">H</span>
+                </div>
+                <h3 class="font-orbitron text-xl font-bold text-white mb-2">HAL-90 <span class="citation"></span></h3>
+                <p class="font-mono text-xs text-neonCyan mb-6 uppercase tracking-widest">Habitat Mediator & Command <span class="citation"></span></p>
+                <p class="text-zinc-400 mb-8 leading-relaxed">
+                    Resolves direct conflicts between energy and biological requests to ensure safety <span class="citation"></span>. Hal-90 operates as a data-driven resource arbitrator maintaining the habitat's "Goldilocks Zone".
+                </p>
+                <div class="pt-6 border-t border-zinc-800 text-xs font-mono text-zinc-500">
+                    TOOLS: ConflictResolutionMatrix, SafetyProtocolOverride <span class="citation"></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="stack" class="max-w-7xl mx-auto px-6 py-32 border-t border-zinc-900">
+        <div class="grid lg:grid-cols-2 gap-20 items-center">
+            <div>
+                <h2 class="font-orbitron text-4xl font-bold mb-8">THE_CORE <br /> <span class="neon-text-cyan">INFRASTRUCTURE.</span></h2>
+                <p class="text-zinc-400 mb-12 text-lg leading-relaxed">
+                    Built on high-performance Python 3.11+ <span class="citation"></span>, AETHER utilizes a sophisticated tech stack to facilitate low-latency inter-agent communication and precise environmental simulation <span class="citation"></span>.
+                </p>
+                
+                <div class="grid sm:grid-cols-2 gap-6">
+                    <div class="p-6 border border-zinc-800 bg-zinc-900/20">
+                        <h4 class="text-neonPurple font-bold mb-2">ORCHESTRATION</h4>
+                        <p class="text-sm font-mono text-zinc-500">CrewAI / LangGraph <span class="citation"></span></p>
+                    </div>
+                    <div class="p-6 border border-zinc-800 bg-zinc-900/20">
+                        <h4 class="text-neonCyan font-bold mb-2">SIMULATION</h4>
+                        <p class="text-sm font-mono text-zinc-500">SimPy Engine <span class="citation"></span></p>
+                    </div>
+                    <div class="p-6 border border-zinc-800 bg-zinc-900/20">
+                        <h4 class="text-neonGreen font-bold mb-2">MESSAGING</h4>
+                        <p class="text-sm font-mono text-zinc-500">MQTT Protocol <span class="citation"></span></p>
+                    </div>
+                    <div class="p-6 border border-zinc-800 bg-zinc-900/20">
+                        <h4 class="text-neonAmber font-bold mb-2">ENVIRONMENT</h4>
+                        <p class="text-sm font-mono text-zinc-500">Isolated Linux-Based <span class="citation"></span></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="relative">
+                <div class="w-full aspect-square neon-border-cyan rounded-full flex items-center justify-center p-8 relative overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-br from-neonCyan/5 to-neonPurple/5"></div>
+                    <div class="text-center relative z-10">
+                        <span class="font-orbitron text-6xl font-black text-white block mb-4">99.8%</span>
+                        <span class="font-mono text-xs tracking-widest text-zinc-500 uppercase">Uptime Reliability Baseline <span class="citation"></span></span>
+                    </div>
+                    <div class="absolute w-4 h-4 bg-neonCyan rounded-full blur-sm top-1/2 left-0 -translate-y-1/2 animate-ping"></div>
+                    <div class="absolute w-4 h-4 bg-neonPurple rounded-full blur-sm top-1/2 right-0 -translate-y-1/2 animate-ping"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="border-t border-zinc-900 py-20 bg-void">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <div class="font-orbitron text-2xl font-black neon-text-cyan mb-6">AETHER_SYSTEMS</div>
+            <p class="text-zinc-600 font-mono text-xs uppercase tracking-[0.4em] mb-10">
+                Self-Sustaining Habitat Intelligence Protocol <span class="citation"></span>
+            </p>
+            <div class="flex justify-center gap-8 text-xs font-mono text-zinc-500">
+                <span class="hover:text-neonCyan cursor-pointer transition-all">TERMINAL_V1.2</span>
+                <span class="hover:text-neonPurple cursor-pointer transition-all">LICENSE_MIT</span>
+                <span class="hover:text-neonGreen cursor-pointer transition-all">DOCS_CORE</span>
+            </div>
+            <div class="mt-12 text-[10px] font-mono text-zinc-800 uppercase tracking-widest">
+                © 2026 AETHER Neural Governance Framework <span class="citation"></span>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

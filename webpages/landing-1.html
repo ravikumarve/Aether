@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:title" content="AETHER | Cultivating Intelligence">
+    <meta property="og:description" content="Autonomous environmental regulator for vertical farming. AETHER orchestrates energy, biology, and life support through distributed multi-agent intelligence.">
+    <title>AETHER | Cultivating Intelligence</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Organic Dark Palette */
+            --deep-canopy: #020a06;
+            --moss-dark: #07170e;
+            --bio-emerald: #10b981;
+            --bio-emerald-dark: #059669;
+            --sun-ray: #fcd34d;
+            --spore-glow: #a7f3d0;
+            --text-main: #f0fdf4;
+            --text-muted: #9ca3af;
+            
+            /* Glassmorphism */
+            --glass-bg: rgba(7, 23, 14, 0.4);
+            --glass-border: rgba(16, 185, 129, 0.2);
+            --glass-highlight: rgba(255, 255, 255, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--deep-canopy);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Lusion-Inspired Organic Canvas */
+        #spore-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.85;
+            background: radial-gradient(circle at 50% 50%, var(--moss-dark) 0%, var(--deep-canopy) 100%);
+        }
+
+        /* Typography */
+        h1, h2, h3, h4, .serif {
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 4vw;
+        }
+
+        section {
+            padding: 15vh 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 0;
+            position: relative;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        .logo svg {
+            width: 32px;
+            height: 32px;
+            filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6));
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.2rem 2.5rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 100px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+            color: var(--spore-glow);
+            border: 1px solid var(--bio-emerald);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+        }
+
+        .btn-primary:hover {
+            background: var(--bio-emerald);
+            color: var(--deep-canopy);
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--spore-glow);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 5vh;
+        }
+
+        .hero-content {
+            max-width: 1000px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.6rem 1.2rem;
+            background: rgba(252, 211, 77, 0.05);
+            border: 1px solid rgba(252, 211, 77, 0.2);
+            color: var(--sun-ray);
+            border-radius: 50px;
+            margin-bottom: 3rem;
+            backdrop-filter: blur(5px);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--sun-ray);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--sun-ray);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Enhanced Headline */
+        .headline {
+            font-size: 7.5rem;
+            line-height: 0.95;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .headline .line-1 {
+            display: block;
+            color: #ffffff;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .headline .line-2 {
+            display: block;
+            font-style: italic;
+            background: linear-gradient(to right, var(--bio-emerald), var(--sun-ray));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            padding-right: 20px;
+            filter: drop-shadow(0 0 30px rgba(16, 185, 129, 0.3));
+        }
+
+        .hero p.lead {
+            font-size: 1.35rem;
+            line-height: 1.8;
+            color: var(--text-muted);
+            max-width: 650px;
+            font-weight: 300;
+            margin-bottom: 3.5rem;
+        }
+
+        /* Section Headers */
+        .section-header {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 5rem;
+        }
+
+        .section-header h2 {
+            font-size: 4rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+        }
+
+        .section-header p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        /* Glass Terrariums (Agents) */
+        .terrarium-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.5rem;
+        }
+
+        .terrarium-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 3.5rem 3rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .terrarium-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, var(--glass-highlight) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .terrarium-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+
+        .terrarium-card h3 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--spore-glow);
+        }
+
+        .terrarium-card p {
+            color: var(--text-muted);
+            line-height: 1.7;
+            font-size: 1.1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 1.5rem;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat-value {
+            color: var(--text-main);
+            font-size: 1.3rem;
+            font-weight: 500;
+        }
+
+        /* Capabilities / Features */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 2rem;
+            padding: 3rem;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .feature-card:hover {
+            background: rgba(16, 185, 129, 0.05);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            background: rgba(16, 185, 129, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--bio-emerald);
+        }
+
+        .feature-content h4 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        .feature-content p {
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        /* Terminal / Workflow Section */
+        .workflow-wrapper {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            padding: 5rem;
+            backdrop-filter: blur(20px);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5rem;
+            align-items: center;
+        }
+
+        .terminal-container {
+            background: #010402;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background: #0a110d;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            gap: 8px;
+        }
+
+        .terminal-header .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-body {
+            padding: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.8;
+            color: #8b949e;
+        }
+
+        .term-input { color: var(--bio-emerald); }
+        .term-sys { color: var(--text-main); }
+        .term-alert { color: var(--sun-ray); }
+
+        /* Pricing Section */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 3rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 4rem 3rem;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+
+        .pricing-card.featured {
+            background: var(--glass-bg);
+            border-color: var(--bio-emerald);
+            box-shadow: 0 0 50px rgba(16, 185, 129, 0.1);
+            transform: scale(1.02);
+            position: relative;
+        }
+
+        .featured-badge {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bio-emerald);
+            color: var(--deep-canopy);
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pricing-card h3 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .price {
+            font-size: 4rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 300;
+            color: var(--text-main);
+            margin: 1.5rem 0 2rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .price span {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            margin-left: 10px;
+        }
+
+        .pricing-list {
+            list-style: none;
+            margin-bottom: 3rem;
+            flex-grow: 1;
+        }
+
+        .pricing-list li {
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        .pricing-list li svg {
+            color: var(--bio-emerald);
+            flex-shrink: 0;
+        }
+
+        /* Deep Multi-Column Footer */
+        footer {
+            border-top: 1px solid var(--glass-border);
+            padding: 6rem 0 2rem;
+            margin-top: 8rem;
+            /* Removed the dark background and blur to let the canvas show through */
+            background: transparent;
+            position: relative;
+            z-index: 10;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .footer-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 4px;
+            color: var(--text-main);
+            text-decoration: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-logo svg {
+            width: 32px;
+            height: 32px;
+            filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6));
+        }
+
+        .footer-col h5 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-col ul {
+            list-style: none;
+        }
+
+        .footer-col ul li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-col ul a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .footer-col ul a:hover {
+            color: var(--bio-emerald);
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @media (max-width: 1024px) {
+            .headline { font-size: 5rem; }
+            .terrarium-grid, .features-grid, .pricing-grid, .workflow-wrapper { grid-template-columns: 1fr; }
+            .workflow-wrapper { padding: 3rem 2rem; }
+            .pricing-card.featured { transform: scale(1); }
+            
+            .footer-grid { grid-template-columns: 1fr 1fr; }
+            .footer-col:first-child { grid-column: span 2; }
+        }
+
+        @media (max-width: 768px) {
+            .headline { font-size: 3.5rem; }
+            .terrarium-card { transform: none !important; }
+            .btn-group { display: flex; flex-direction: column; width: 100%; gap: 1rem; }
+            .btn { width: 100%; }
+            
+            .footer-grid { grid-template-columns: 1fr; gap: 3rem; }
+            .footer-col:first-child { grid-column: span 1; }
+            .footer-bottom { flex-direction: column; gap: 1rem; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="spore-canvas"></canvas>
+
+    <div class="container">
+        <nav>
+            <a href="#" class="logo">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="emerald-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#10b981" />
+                            <stop offset="100%" stop-color="#fcd34d" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12" stroke="url(#emerald-grad)" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M12 2C12 2 18 6 18 12C18 18 12 22 12 22" stroke="url(#emerald-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="12" cy="12" r="3" fill="#10b981"/>
+                </svg>
+                AETHER
+            </a>
+            <div class="mono" style="color: var(--text-muted);">
+                System Status: Active
+            </div>
+        </nav>
+
+        <section class="hero">
+            <div class="hero-content">
+                <div class="status-badge mono">
+                    <div class="status-dot"></div>
+                    Yield Orchestration // Optimal
+                </div>
+                
+                <h1 class="headline">
+                    <span class="line-1">Cultivate Intelligence.</span>
+                    <span class="line-2">Automate Nature.</span>
+                </h1>
+                
+                <p class="lead">A sophisticated, zero-GUI multi-agent system designed exclusively for modern vertical farming infrastructure. AETHER silently orchestrates the delicate balance between grid energy consumption, photosynthetic light cycles, and atmospheric life support without human intervention.</p>
+                
+                <div class="btn-group" style="display: flex; gap: 1.5rem;">
+                    <a href="#pricing" class="btn btn-primary">Acquire License</a>
+                    <a href="#workflow" class="btn btn-outline">View Telemetry</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="agents">
+            <div class="section-header">
+                <h2>The Biological Ecosystem</h2>
+                <p>We discarded centralized, brittle logic for a triad of specialized neural agents. They operate as a digital biome, constantly mediating resources to maximize crop yield while minimizing waste.</p>
+            </div>
+
+            <div class="terrarium-grid">
+                <div class="terrarium-card">
+                    <div class="mono" style="color: var(--sun-ray); margin-bottom: 1.5rem;">Node 01 // Energy</div>
+                    <h3>Solara</h3>
+                    <p>The photosynthetic regulator. Audits solar intake and forecasts grid power limits. Ruthlessly minimizes electricity waste to keep the facility deeply sustainable.</p>
+                    <div class="stat-row">
+                        <div class="stat">
+                            <span class="mono" style="font-size: 0.7rem; color: var(--text-muted);">Forecast Conf.</span>
+                            <span class="stat-value">0.93<span style="font-size: 0.8rem; color: var(--text-muted);">cv</span></span>
+                        </div>
+                        <div class="stat">
+                            <span class="mono" style="font-size: 0.7rem; color: var(--text-muted);">Threshold</span>
+                            <span class="stat-value">< 600W</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="terrarium-card" style="transform: translateY(30px);">
+                    <div class="mono" style="color: var(--bio-emerald); margin-bottom: 1.5rem;">Node 02 // Biology</div>
+                    <h3>Veridian</h3>
+                    <p>The caretaker of the Green Lung. Regulates CO2 enrichment, O2 exhaust, and hydroponic nutrient density. Prioritizes crop yield and biological health above all else.</p>
+                    <div class="stat-row">
+                        <div class="stat">
+                            <span class="mono" style="font-size: 0.7rem; color: var(--text-muted);">O2 Target</span>
+                            <span class="stat-value">21.0%</span>
+                        </div>
+                        <div class="stat">
+                            <span class="mono" style="font-size: 0.7rem; color: var(--text-muted);">Priority</span>
+                            <span class="stat-value">Max Yield</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="terrarium-card">
+                    <div class="mono" style="color: var(--text-muted); margin-bottom: 1.5rem;">Node 03 // Harmony</div>
+                    <h3>Hal-90</h3>
+                    <p>The mediator. Resolves disputes between Solara's energy constraints and Veridian's demands, keeping the facility locked within the optimal growth "Goldilocks Zone".</p>
+                    <div class="stat-row">
+                        <div class="stat">
+                            <span class="mono" style="font-size: 0.7rem; color: var(--text-muted);">Resolution</span>
+                            <span class="stat-value">< 1.0s</span>
+                        </div>
+                        <div class="stat">
+                            <span class="mono" style="font-size: 0.7rem; color: var(--text-muted);">Stability</span>
+                            <span class="stat-value">99.9%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="capabilities">
+            <div class="section-header">
+                <h2>Core Capabilities</h2>
+                <p>Engineered for the physical demands of high-density agricultural environments.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+                    </div>
+                    <div class="feature-content">
+                        <h4>Hydroponic Matrices</h4>
+                        <p>Continuous monitoring of water pH, nutrient concentration, and flow rates. Veridian adjusts dynamically to prevent root rot and maximize nutrient uptake.</p>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="4.22" x2="19.78" y2="5.64"></line></svg>
+                    </div>
+                    <div class="feature-content">
+                        <h4>Spectral Light Control</h4>
+                        <p>Solara minimizes grid dependency by balancing natural sunlight intake with precise, high-efficiency LED spectral shifting for optimal photosynthesis.</p>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path><line x1="16" y1="8" x2="2" y2="22"></line><line x1="17.5" y1="15" x2="9" y2="6.5"></line></svg>
+                    </div>
+                    <div class="feature-content">
+                        <h4>Zero-GUI Footprint</h4>
+                        <p>No dashboards to distract you. No manual toggles. AETHER runs entirely as a backend daemon via SimPy and MQTT, handling orchestration autonomously.</p>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    </div>
+                    <div class="feature-content">
+                        <h4>Anomaly Response</h4>
+                        <p>Built-in emergency protocols for sudden thermal spikes or humidity drops. The system instantly routes response sequences to the appropriate agent within <1 second.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="workflow">
+            <div class="workflow-wrapper">
+                <div>
+                    <h2 style="font-size: 3.5rem; margin-bottom: 1.5rem; font-weight: 600;">Deploy & <br><i style="color: var(--bio-emerald);">Detach.</i></h2>
+                    <p style="font-size: 1.2rem; color: var(--text-muted); line-height: 1.8; margin-bottom: 2rem;">
+                        AETHER requires zero daily management. Push your environment variables to the hardware via MQTT, initiate the SimPy engine, and step away. The continuous loop handles the rest.
+                    </p>
+                    <div style="display: flex; gap: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem;">
+                        <div>
+                            <div style="font-size: 2.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--text-main);">>99%</div>
+                            <div class="mono" style="color: var(--text-muted); margin-top: 5px;">Gate Pass Rate</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 2.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--text-main);"><1s</div>
+                            <div class="mono" style="color: var(--text-muted); margin-top: 5px;">Mediation Time</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="terminal-container">
+                    <div class="terminal-header">
+                        <div class="dot" style="background: #ff5f56;"></div>
+                        <div class="dot" style="background: #ffbd2e;"></div>
+                        <div class="dot" style="background: #27c93f;"></div>
+                    </div>
+                    <div class="terminal-body">
+                        <div><span class="term-input">~/facility/matrix</span> $ python src/main.py --cycles 24</div>
+                        <br>
+                        <div>[<span class="term-sys">AETHER</span>] Booting biological orchestrator...</div>
+                        <div>[<span class="term-sys">SOLARA</span>] Array audit complete. Power optimal.</div>
+                        <div>[<span class="term-sys">VERIDIAN</span>] Hydroponic matrix online.</div>
+                        <div>[<span class="term-sys">HAL-90</span>] Goldilocks zone established (22°C).</div>
+                        <br>
+                        <div><span class="term-alert">WARNING</span>: External humidity drop detected.</div>
+                        <div>[<span class="term-sys">VERIDIAN</span>] Compensating transpiration rates...</div>
+                        <div>[<span class="term-sys">HAL-90</span>] Approved. Equilibrium restored.</div>
+                        <br>
+                        <div style="animation: pulse 1s infinite;">_</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="pricing">
+            <div class="section-header">
+                <h2>Acquisition</h2>
+                <p>Secure your orchestration license. Delivered instantly via Gumroad.</p>
+            </div>
+
+            <div class="pricing-grid">
+                
+                <div class="pricing-card">
+                    <h3>Simulation Core</h3>
+                    <p style="color: var(--text-muted); line-height: 1.6;">Perfect for local testing and non-commercial sandbox environments.</p>
+                    
+                    <div class="price">$49 <span>/ one-time</span></div>
+                    
+                    <ul class="pricing-list">
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Full SimPy Engine Access
+                        </li>
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Pre-configured Neural Agents
+                        </li>
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Offline Simulation Mode
+                        </li>
+                    </ul>
+                    
+                    <a href="https://gumroad.com/l/aether-sim" target="_blank" class="btn btn-outline" style="width: 100%;">Get Local Access</a>
+                </div>
+
+                <div class="pricing-card featured">
+                    <div class="featured-badge">Commercial Ready</div>
+                    <h3>Orchestrator Pro</h3>
+                    <p style="color: var(--text-muted); line-height: 1.6;">Full hardware integration and commercial deployment rights for live facilities.</p>
+                    
+                    <div class="price">$199 <span>/ one-time</span></div>
+                    
+                    <ul class="pricing-list">
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Everything in Simulation Core
+                        </li>
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Full Mosquitto MQTT Scripts
+                        </li>
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Hal-90 Hardware Overrides
+                        </li>
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Commercial Production Rights
+                        </li>
+                    </ul>
+                    
+                    <a href="https://gumroad.com/l/aether-pro" target="_blank" class="btn btn-primary" style="width: 100%;">Acquire on Gumroad</a>
+                </div>
+
+            </div>
+        </section>
+        
+        <footer>
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <a href="#" class="footer-logo">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="emerald-grad-footer" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#10b981" />
+                                    <stop offset="100%" stop-color="#fcd34d" />
+                                </linearGradient>
+                            </defs>
+                            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12" stroke="url(#emerald-grad-footer)" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M12 2C12 2 18 6 18 12C18 18 12 22 12 22" stroke="url(#emerald-grad-footer)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="12" cy="12" r="3" fill="#10b981"/>
+                        </svg>
+                        AETHER
+                    </a>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; max-width: 320px;">
+                        Autonomous Environmental Regulator. Silently orchestrating the delicate balance of vertical farming and bio-regenerative agriculture.
+                    </p>
+                </div>
+
+                <div class="footer-col">
+                    <h5>Product</h5>
+                    <ul>
+                        <li><a href="#capabilities">Features</a></li>
+                        <li><a href="#">Security</a></li>
+                        <li><a href="#pricing">Pricing</a></li>
+                        <li><a href="#">Documentation</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h5>Resources</h5>
+                    <ul>
+                        <li><a href="https://github.com/aether">GitHub</a></li>
+                        <li><a href="#">Issues</a></li>
+                        <li><a href="#">Contributing</a></li>
+                        <li><a href="#">License</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h5>Community</h5>
+                    <ul>
+                        <li><a href="https://github.com/aether">Star on GitHub</a></li>
+                        <li><a href="#">FAQ</a></li>
+                        <li><a href="#">Discussions</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h5>Legal</h5>
+                    <ul>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="#">MIT License</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div class="mono" style="color: var(--text-muted); font-size: 0.85rem;">
+                    System Status: <span style="color: var(--bio-emerald);">Active & Online</span>
+                </div>
+                <div class="mono" style="color: var(--text-muted); font-size: 0.85rem;">
+                    AETHER v1.0.0 // &copy; 2026
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        // Organic Particle Swarm (Spores/Fireflies)
+        const canvas = document.getElementById('spore-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let particles = [];
+        let mouse = { x: null, y: null };
+
+        function init() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            particles = [];
+            
+            // Adjust particle count based on screen size for performance
+            const particleCount = Math.floor((width * height) / 10000);
+            
+            for(let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    radius: Math.random() * 2 + 0.5,
+                    vx: (Math.random() - 0.5) * 0.25,
+                    vy: (Math.random() - 0.5) * 0.25,
+                    baseAlpha: Math.random() * 0.4 + 0.1,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        window.addEventListener('mouseout', () => {
+            mouse.x = null;
+            mouse.y = null;
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, width, height);
+
+            particles.forEach((p, index) => {
+                // Organic floating motion
+                p.x += p.vx + Math.sin(p.phase) * 0.08;
+                p.y += p.vy + Math.cos(p.phase) * 0.08;
+                p.phase += 0.015;
+
+                // Wrap around edges softly
+                if(p.x < -20) p.x = width + 20;
+                if(p.x > width + 20) p.x = -20;
+                if(p.y < -20) p.y = height + 20;
+                if(p.y > height + 20) p.y = -20;
+
+                // Mouse interaction (gentle repel)
+                if (mouse.x != null) {
+                    let dx = mouse.x - p.x;
+                    let dy = mouse.y - p.y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 200) {
+                        p.x -= (dx / distance) * 0.3;
+                        p.y -= (dy / distance) * 0.3;
+                    }
+                }
+
+                // Pulsing glow effect
+                let currentAlpha = p.baseAlpha + Math.sin(p.phase) * 0.2;
+                if (currentAlpha < 0.05) currentAlpha = 0.05;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                
+                // Mix of emerald and gold spores based on radius size
+                if(p.radius > 1.8) {
+                    ctx.fillStyle = `rgba(16, 185, 129, ${currentAlpha})`; // bio-emerald
+                    ctx.shadowColor = 'rgba(16, 185, 129, 0.8)';
+                } else {
+                    ctx.fillStyle = `rgba(252, 211, 77, ${currentAlpha})`; // sun-ray
+                    ctx.shadowColor = 'rgba(252, 211, 77, 0.5)';
+                }
+                
+                ctx.shadowBlur = p.radius * 5;
+                ctx.fill();
+                ctx.shadowBlur = 0; // reset to prevent bleed
+
+                // Neural connecting lines — visualize agent orchestration
+                for(let j = index + 1; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dx = p.x - p2.x;
+                    const dy = p.y - p2.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+
+                    if(dist < 150) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(16, 185, 129, ${0.08 - dist/1875})`;
+                        ctx.lineWidth = 0.4;
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            });
+        }
+
+        // Handle window resize smoothly
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(init, 200);
+        });
+
+        init();
+        animate();
+    </script>
+</body>
+</html>

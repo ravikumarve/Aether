@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AETHER | Autonomous Habitat Regulator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;400;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight-blue: #040814;
+            --carbon-gray: #151a22;
+            --carbon-light: #1e2532;
+            --electric-violet: #8a2be2;
+            --electric-cyan: #00f0ff;
+            --alert-red: #ff3366;
+            --success-green: #10b981;
+            --text-main: #e2e8f0;
+            --text-muted: #8b949e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--midnight-blue);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Canvas Background */
+        #aether-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4 {
+            font-family: 'Syncopate', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, var(--electric-cyan), var(--electric-violet));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Layout & Sections */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        section {
+            padding: 8rem 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .section-header {
+            margin-bottom: 4rem;
+            text-align: center;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 0;
+            position: relative;
+            z-index: 10;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .logo {
+            font-family: 'Syncopate', sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo::before {
+            content: '';
+            display: block;
+            width: 12px;
+            height: 12px;
+            background: var(--electric-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--electric-cyan);
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2.5rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--electric-cyan);
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            font-family: 'Syncopate', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-decoration: none;
+            letter-spacing: 1.5px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--electric-cyan), var(--electric-violet));
+            color: var(--midnight-blue);
+            border: none;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 35px rgba(138, 43, 226, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: rgba(21, 26, 34, 0.8);
+            backdrop-filter: blur(5px);
+            color: var(--text-main);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--electric-cyan);
+            background: rgba(0, 240, 255, 0.1);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 85vh;
+            display: flex;
+            align-items: center;
+        }
+
+        .hero-content {
+            flex: 1;
+            padding-right: 2rem;
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 550px;
+            line-height: 1.7;
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        .hero-visual {
+            flex: 1;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        /* Terminal Window */
+        .terminal {
+            background: var(--carbon-gray);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+        }
+
+        .terminal-header {
+            background: var(--carbon-light);
+            padding: 0.75rem 1rem;
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot.red { background: #ff5f56; }
+        .dot.yellow { background: #ffbd2e; }
+        .dot.green { background: #27c93f; }
+
+        .terminal-body {
+            padding: 1.5rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .cmd { color: var(--electric-cyan); }
+        .sys { color: var(--electric-violet); }
+        .success { color: var(--success-green); }
+
+        /* Agents Section */
+        .agents-bg {
+            background: linear-gradient(to bottom, transparent, var(--carbon-gray), transparent);
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: rgba(21, 26, 34, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 3rem 2.5rem;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--electric-cyan), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            background: rgba(21, 26, 34, 0.9);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .card:hover::before { opacity: 1; }
+
+        .card.agent-solara:hover { border-color: rgba(0, 240, 255, 0.3); }
+        .card.agent-veridian::before { background: linear-gradient(90deg, var(--success-green), transparent); }
+        .card.agent-veridian:hover { border-color: rgba(16, 185, 129, 0.3); }
+        .card.agent-hal::before { background: linear-gradient(90deg, var(--electric-violet), transparent); }
+        .card.agent-hal:hover { border-color: rgba(138, 43, 226, 0.3); }
+
+        .card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+        
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: 'Fira Code', monospace;
+            color: var(--text-main);
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Pipeline Orchestration Sequence */
+        .pipeline-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .pipeline-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 20px;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .pipeline-step {
+            position: relative;
+            padding-left: 60px;
+            margin-bottom: 3rem;
+        }
+
+        .step-marker {
+            position: absolute;
+            left: 11px;
+            top: 0;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--midnight-blue);
+            border: 2px solid var(--electric-cyan);
+            box-shadow: 0 0 10px var(--electric-cyan);
+        }
+
+        .pipeline-step h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .pipeline-step p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+            padding: 4rem;
+            background: var(--carbon-light);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .metric-item h4 {
+            font-size: 3rem;
+            background: linear-gradient(180deg, #fff, var(--text-muted));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-item p {
+            color: var(--electric-cyan);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 4rem 0 2rem;
+            background: var(--midnight-blue);
+            position: relative;
+            z-index: 10;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 4rem;
+            margin-bottom: 4rem;
+        }
+
+        .footer-col h5 {
+            font-family: 'Syncopate', sans-serif;
+            color: var(--text-main);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .footer-col ul {
+            list-style: none;
+        }
+
+        .footer-col ul li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-col ul a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .footer-col ul a:hover {
+            color: var(--electric-cyan);
+        }
+
+        .copyright {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            font-family: 'Fira Code', monospace;
+        }
+
+        @media (max-width: 992px) {
+            .hero { flex-direction: column; text-align: center; padding-top: 4rem; }
+            .hero-content { padding-right: 0; margin-bottom: 3rem; }
+            .hero h1 { font-size: 3.5rem; }
+            .hero p { margin: 0 auto 2rem; }
+            .btn-group { justify-content: center; }
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); gap: 3rem; }
+            .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero h1 { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="aether-canvas"></canvas>
+
+    <div class="container">
+        <nav>
+            <div class="logo">AETHER</div>
+            <div class="nav-links">
+                <a href="#architecture">Architecture</a>
+                <a href="#agents">Agents</a>
+                <a href="#pipeline">Pipeline</a>
+                <a href="#metrics">Telemetry</a>
+            </div>
+        </nav>
+
+        <section class="hero">
+            <div class="hero-content">
+                <h1>Autonomous <br><span class="gradient-text">Habitat</span> Orchestration.</h1>
+                <p>Deploy and detach. AETHER is a zero-GUI, multi-agent orchestrator utilizing distributed intelligence to silently manage energy, life support, and extreme environment anomalies. Push your configuration, step away, and let the agents handle the rest.</p>
+                <div class="btn-group">
+                    <a href="#pipeline" class="btn btn-primary">Initialize Core</a>
+                    <a href="https://github.com/aether" class="btn btn-outline">Read Documentation</a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="terminal">
+                    <div class="terminal-header">
+                        <div class="dot red"></div>
+                        <div class="dot yellow"></div>
+                        <div class="dot green"></div>
+                    </div>
+                    <div class="terminal-body">
+                        <div><span class="cmd">~ matrix</span>$ cd /opencode_projects/AETHER</div>
+                        <div><span class="cmd">~ AETHER</span>$ source venv/bin/activate</div>
+                        <div><span class="cmd">(venv) AETHER</span>$ python src/main.py --no-mqtt --cycles 24</div>
+                        <br>
+                        <div><span class="sys">[SYSTEM]</span> Loading Agents Orchestrator...</div>
+                        <div><span class="sys">[SYSTEM]</span> Registering Solara, Veridian, Hal-90</div>
+                        <div><span class="success">[OK]</span> Quality Gate Passed: Initialization</div>
+                        <div><span class="sys">[AETHER]</span> Commencing 24h simulation loop...</div>
+                        <br>
+                        <div style="opacity: 0.7;">_</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <section id="agents" class="agents-bg">
+        <div class="container">
+            <div class="section-header">
+                <h2>Distributed <span class="gradient-text">Intelligence</span></h2>
+                <p>Three specialized neural models resolving complex environmental conflicts through high-frequency autonomous mediation. No manual overrides required.</p>
+            </div>
+            
+            <div class="grid-3">
+                <div class="card agent-solara">
+                    <h3 style="color: var(--electric-cyan);">🌞 Solara</h3>
+                    <p><strong>Energy Grid Optimizer.</strong> Constantly runs power audits, scanning solar radiation and forecasting limits via CV-based confidence formulas. Ruthlessly prioritizes power efficiency.</p>
+                    <div class="tags">
+                        <span class="tag">PowerGridAnalyzer</span>
+                        <span class="tag">WeatherForecaster</span>
+                    </div>
+                </div>
+                <div class="card agent-veridian">
+                    <h3 style="color: var(--success-green);">🌿 Veridian</h3>
+                    <p><strong>Bio-Regenerative Supervisor.</strong> Regulates O2/CO2 exchange and hydroponic matrices. fiercely protective of the "Green Lung", ensuring biological survival systems never fail.</p>
+                    <div class="tags">
+                        <span class="tag">AtmosphereAnalyzer</span>
+                        <span class="tag">AlgaeBioreactor</span>
+                    </div>
+                </div>
+                <div class="card agent-hal">
+                    <h3 style="color: var(--electric-violet);">🤖 Hal-90</h3>
+                    <p><strong>Habitat Mediator.</strong> The cold, analytical command node. Resolves resource conflicts between Solara and Veridian, ensuring the habitat strictly remains in the human "Goldilocks Zone".</p>
+                    <div class="tags">
+                        <span class="tag">ConflictResolutionMatrix</span>
+                        <span class="tag">SafetyOverride</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="pipeline">
+        <div class="container">
+            <div class="section-header">
+                <h2>The Execution <span class="gradient-text">Pipeline</span></h2>
+                <p>Strict quality gates and conditional mediation loops govern every cycle, guaranteeing an uncompromised continuous loop of survival logistics.</p>
+            </div>
+
+            <div class="pipeline-container">
+                <div class="pipeline-step">
+                    <div class="step-marker" style="border-color: var(--text-muted);"></div>
+                    <h4>Phase 1: System Initialization</h4>
+                    <p>Loads core environment variables, validates MQTT connections, and boots the SimPy engine. Quality gate verifies all agents are registered and active.</p>
+                </div>
+                <div class="pipeline-step">
+                    <div class="step-marker" style="border-color: var(--electric-cyan);"></div>
+                    <h4>Phase 2: Solara Power Audit</h4>
+                    <p>Scans telemetry for current battery levels and solar radiation. Generates a 24-hour forecast with dynamic confidence scoring (>92% required during daytime).</p>
+                </div>
+                <div class="pipeline-step">
+                    <div class="step-marker" style="border-color: var(--success-green);"></div>
+                    <h4>Phase 3: Veridian Biological Audit</h4>
+                    <p>Calculates precise water, light, and power draw necessary to maintain O2 > 19.5%. Verifies the request against Solara's projected power ceiling.</p>
+                </div>
+                <div class="pipeline-step">
+                    <div class="step-marker" style="border-color: var(--electric-violet);"></div>
+                    <h4>Phase 4: Hal-90 Mediation</h4>
+                    <p>Conditionally triggered if biological requests exceed power budgets. Hal-90 enforces the Goldilocks Zone constraints (18-26°C), arbitrating a final resource allocation.</p>
+                </div>
+                <div class="pipeline-step">
+                    <div class="step-marker" style="border-color: var(--alert-red);"></div>
+                    <h4>Continuous Anomaly Loop</h4>
+                    <p>Listens via MQTT for sudden pressure drops, dust storms, or thermal spikes. Instantly classifies the anomaly and routes an emergency response sequence to the appropriate agent.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="metrics" class="agents-bg">
+        <div class="container">
+            <div class="section-header">
+                <h2>Production <span class="gradient-text">Telemetry</span></h2>
+                <p>Engineered for mission-critical reliability. Real-time metrics harvested from extensive SimPy stress testing.</p>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <h4>>95%</h4>
+                    <p>Pipeline Health</p>
+                </div>
+                <div class="metric-item">
+                    <h4><5s</h4>
+                    <p>Avg Cycle Time</p>
+                </div>
+                <div class="metric-item">
+                    <h4>>99%</h4>
+                    <p>Quality Gate Pass</p>
+                </div>
+                <div class="metric-item">
+                    <h4><1s</h4>
+                    <p>Anomaly Response</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div class="logo" style="margin-bottom: 1rem;">AETHER</div>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; max-width: 300px;">
+                        Autonomous Environmental & Thermal Habitat Efficiency Regulator. Designed for backend-driven deployment in the extreme environments of tomorrow.
+                    </p>
+                </div>
+                <div class="footer-col">
+                    <h5>Architecture</h5>
+                    <ul>
+                        <li><a href="#">Orchestrator</a></li>
+                        <li><a href="#">SimPy Engine</a></li>
+                        <li><a href="#">MQTT Protocol</a></li>
+                        <li><a href="#">Agent Specs</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h5>Resources</h5>
+                    <ul>
+                        <li><a href="#">Documentation</a></li>
+                        <li><a href="#">Quick Start Guide</a></li>
+                        <li><a href="#">GitHub Repository</a></li>
+                        <li><a href="#">License (MIT)</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                $ echo "AETHER v1.0.0 — MVP Release. All systems nominal."
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Lusion-inspired autonomous particle network
+        const canvas = document.getElementById('aether-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height, particles;
+
+        function init() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            particles = [];
+            
+            const particleCount = Math.floor((width * height) / 12000);
+            
+            for(let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    radius: Math.random() * 1.5 + 0.5,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4,
+                    // Intermix Violet and Cyan
+                    color: Math.random() > 0.5 ? '#00f0ff' : '#8a2be2' 
+                });
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, width, height);
+
+            particles.forEach((p, index) => {
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Bounce off edges
+                if(p.x < 0 || p.x > width) p.vx *= -1;
+                if(p.y < 0 || p.y > height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+
+                // Draw connecting lines to simulate neural/agent orchestration
+                for(let j = index + 1; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dx = p.x - p2.x;
+                    const dy = p.y - p2.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+
+                    if(dist < 150) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(138, 43, 226, ${0.12 - dist/1250})`; 
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            });
+        }
+
+        window.addEventListener('resize', init);
+        init();
+        animate();
+    </script>
+</body>
+</html>

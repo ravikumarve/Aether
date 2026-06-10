@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AETHER | Telemetry Command</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Industrial After-Dark Palette */
+            --base-bg: #02040a;
+            --carbon-gray: #0d1117;
+            --panel-border: #30363d;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            
+            /* Neon Accents */
+            --cyan-glow: #00f0ff;
+            --violet-glow: #8a2be2;
+            --alert-red: #ff7b72;
+            --success-green: #2ea043;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--base-bg);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            background-image: 
+                linear-gradient(rgba(48, 54, 61, 0.3) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(48, 54, 61, 0.3) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: center center;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Typography */
+        h1, h2, h3, .mono {
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+        }
+
+        .highlight-cyan { color: var(--cyan-glow); text-shadow: 0 0 10px rgba(0, 240, 255, 0.4); }
+        .highlight-violet { color: var(--violet-glow); text-shadow: 0 0 10px rgba(138, 43, 226, 0.4); }
+
+        /* Dashboard Layout */
+        .dashboard-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            grid-template-rows: 80px 1fr;
+            height: 100vh;
+        }
+
+        /* Top Bar */
+        header {
+            grid-column: 1 / -1;
+            background: var(--carbon-gray);
+            border-bottom: 1px solid var(--panel-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+            z-index: 10;
+        }
+
+        .sys-logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .blinker {
+            width: 12px;
+            height: 12px;
+            background-color: var(--cyan-glow);
+            box-shadow: 0 0 10px var(--cyan-glow);
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .sys-status {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--success-green);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--panel-border);
+            background: rgba(46, 160, 67, 0.1);
+        }
+
+        /* Sidebar Navigation */
+        aside {
+            background: var(--carbon-gray);
+            border-right: 1px solid var(--panel-border);
+            padding: 2rem 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-menu li a {
+            display: block;
+            padding: 1rem 2rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .nav-menu li a:hover, .nav-menu li a.active {
+            color: var(--text-main);
+            background: rgba(255,255,255,0.02);
+            border-left-color: var(--violet-glow);
+        }
+
+        .sidebar-footer {
+            padding: 2rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--panel-border);
+        }
+
+        /* Main Content Area */
+        main {
+            padding: 3rem;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Ambient Glow Behind Content */
+        main::before {
+            content: '';
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(138,43,226,0.05) 0%, rgba(0,0,0,0) 70%);
+            transform: translate(-50%, -50%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .page-header {
+            margin-bottom: 3rem;
+            max-width: 800px;
+        }
+
+        .page-header h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.1;
+        }
+
+        .page-header p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-weight: 300;
+        }
+
+        /* Data Grid */
+        .grid-layout {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .panel {
+            background: var(--carbon-gray);
+            border: 1px solid var(--panel-border);
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .panel::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--panel-border);
+            transition: background 0.3s ease;
+        }
+
+        .panel:hover::after {
+            background: linear-gradient(90deg, var(--cyan-glow), var(--violet-glow));
+        }
+
+        .panel-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed var(--panel-border);
+            padding-bottom: 0.5rem;
+        }
+
+        /* Specific Panel Sizes */
+        .panel-large { grid-column: span 8; }
+        .panel-small { grid-column: span 4; }
+        .panel-full { grid-column: span 12; }
+
+        /* Terminal Display */
+        .terminal-output {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            color: var(--text-muted);
+        }
+
+        .log-line .time { color: #484f58; margin-right: 15px; }
+        .log-line .agent { color: var(--violet-glow); margin-right: 10px; }
+        .log-line .info { color: var(--text-main); }
+        .log-line.error .info { color: var(--alert-red); }
+
+        /* Metric Readouts */
+        .metric-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        /* Action Buttons */
+        .action-bar {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            padding: 0.8rem 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            border-color: var(--text-main);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .btn-primary {
+            border-color: var(--violet-glow);
+            color: var(--violet-glow);
+            box-shadow: inset 0 0 10px rgba(138, 43, 226, 0.1);
+        }
+
+        .btn-primary:hover {
+            background: rgba(138, 43, 226, 0.15);
+            border-color: var(--violet-glow);
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.3);
+            color: #fff;
+        }
+
+        /* Pricing Section */
+        .pricing-tier {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem;
+            background: rgba(13, 17, 23, 0.8);
+            border: 1px solid var(--panel-border);
+            margin-bottom: 1rem;
+        }
+
+        .tier-info h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .tier-price { font-size: 2rem; font-family: 'JetBrains Mono', monospace; color: var(--cyan-glow); }
+
+        @media (max-width: 1024px) {
+            .dashboard-container { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+            aside { display: none; }
+            .panel-large, .panel-small { grid-column: span 12; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <header>
+            <div class="sys-logo">
+                <div class="blinker"></div>
+                AETHER <span style="font-weight: 300; color: var(--text-muted);">// CORE</span>
+            </div>
+            <div class="sys-status">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                PIPELINE ACTIVE
+            </div>
+        </header>
+
+        <aside>
+            <ul class="nav-menu">
+                <li><a href="#" class="active">01. Overview</a></li>
+                <li><a href="#agents">02. Neural Agents</a></li>
+                <li><a href="#pipeline">03. Pipeline Stream</a></li>
+                <li><a href="#deploy">04. Acquisition</a></li>
+                <li><a href="https://github.com/aether">05. Documentation</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <div>v1.0.0-rc</div>
+                <div style="margin-top: 5px; color: var(--panel-border);">SIMPY ENGINE LOADED</div>
+            </div>
+        </aside>
+
+        <main>
+            <div class="page-header">
+                <h1>Autonomous <br><span class="highlight-cyan">Habitat</span> Regulator.</h1>
+                <p>Deploy and detach. A completely headless multi-agent system managing energy harvesting, life support, and extreme environment anomalies. Designed for zero-GUI, backend-driven orchestration.</p>
+                <div class="action-bar">
+                    <a href="#deploy" class="btn btn-primary">Initialize Sequence</a>
+                    <a href="https://github.com/aether" class="btn">View Source</a>
+                </div>
+            </div>
+
+            <div class="grid-layout" id="agents">
+                
+                <div class="panel panel-large">
+                    <div class="panel-header">
+                        <span>Live Pipeline Output</span>
+                        <span>src/main.py --cycles 24</span>
+                    </div>
+                    <div class="terminal-output">
+                        <div class="log-line"><span class="time">[00:21:00]</span> <span class="agent">SYSTEM</span> <span class="info">Loading Agents Orchestrator...</span></div>
+                        <div class="log-line"><span class="time">[00:21:01]</span> <span class="agent">SOLARA</span> <span class="info">Power audit complete. Forecast confidence: 0.93</span></div>
+                        <div class="log-line"><span class="time">[00:21:02]</span> <span class="agent">VERIDIAN</span> <span class="info">Biological requirements validated. O2 target: 21.0%</span></div>
+                        <div class="log-line"><span class="time">[00:21:03]</span> <span class="agent">HAL-90</span> <span class="info">Constraints nominal. Resource allocation approved.</span></div>
+                        <br>
+                        <div class="log-line error"><span class="time">[04:15:22]</span> <span class="agent">ANOMALY</span> <span class="info">WARNING: Dust storm detected. Solar efficiency drops 40%.</span></div>
+                        <div class="log-line"><span class="time">[04:15:23]</span> <span class="agent">SOLARA</span> <span class="info">Emergency protocol activated. Non-critical systems powered down.</span></div>
+                        <div class="log-line"><span class="time">[04:15:24]</span> <span class="agent">HAL-90</span> <span class="info">Goldilocks Zone maintained.</span></div>
+                        <div class="log-line"><span class="time blinker" style="display: inline-block; background: transparent; box-shadow: none;">_</span></div>
+                    </div>
+                </div>
+
+                <div class="panel panel-small">
+                    <div class="panel-header">
+                        <span>Global Telemetry</span>
+                        <span>24H AVG</span>
+                    </div>
+                    <div class="metric-group">
+                        <div class="metric">
+                            <span class="metric-label">Pipeline Health</span>
+                            <span class="metric-value" style="color: var(--success-green);">98.2%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Avg Cycle Time</span>
+                            <span class="metric-value highlight-cyan">1.4s</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Forecast Conf.</span>
+                            <span class="metric-value highlight-violet">0.93</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel panel-full" id="pipeline">
+                    <div class="panel-header">
+                        <span>Distributed Intelligence Matrix</span>
+                        <span>3-NODE ORCHESTRATOR</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-top: 1rem;">
+                        
+                        <div>
+                            <h3 style="color: var(--cyan-glow); margin-bottom: 10px; font-size: 1.1rem;">[01] SOLARA</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">Energy Grid Optimizer. Constantly audits power via solar radiation scanning and limits forecasting. Views inefficient usage as a systemic failure.</p>
+                            <div style="margin-top: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #484f58;">TOOLS: PowerGridAnalyzer, WeatherForecaster</div>
+                        </div>
+
+                        <div>
+                            <h3 style="color: var(--success-green); margin-bottom: 10px; font-size: 1.1rem;">[02] VERIDIAN</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">Bio-Regenerative Supervisor. Regulates O2/CO2 exchange and hydroponic matrices. Fiercely protective of the structural "Green Lung".</p>
+                            <div style="margin-top: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #484f58;">TOOLS: BioRequirementsCalc, AtmosphereAnalyzer</div>
+                        </div>
+
+                        <div>
+                            <h3 style="color: var(--violet-glow); margin-bottom: 10px; font-size: 1.1rem;">[03] HAL-90</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">Habitat Mediator. The command node. Resolves resource conflicts between Solara and Veridian to ensure the habitat remains strictly in the "Goldilocks Zone".</p>
+                            <div style="margin-top: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #484f58;">TOOLS: ConflictResolution, SafetyOverride</div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="panel panel-full" id="deploy">
+                    <div class="panel-header">
+                        <span>System Acquisition</span>
+                        <span>SECURE CHECKOUT</span>
+                    </div>
+                    
+                    <div class="pricing-tier">
+                        <div class="tier-info">
+                            <h3>AETHER Sim-License</h3>
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">Full SimPy engine access, pre-configured agents, non-commercial.</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="tier-price">$49</div>
+                            <a href="https://gumroad.com" class="btn" style="margin-top: 10px;">Acquire via Gumroad</a>
+                        </div>
+                    </div>
+
+                    <div class="pricing-tier" style="border-color: var(--violet-glow); background: rgba(138, 43, 226, 0.05);">
+                        <div class="tier-info">
+                            <h3 class="highlight-violet">AETHER Pro</h3>
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">Hardware integration, Hal-90 Overrides, full MQTT setup, commercial rights.</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="tier-price">$199</div>
+                            <a href="https://gumroad.com" class="btn btn-primary" style="margin-top: 10px;">Acquire via Gumroad</a>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>
