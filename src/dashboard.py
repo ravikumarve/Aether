@@ -37,6 +37,13 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[logging.StreamHandler(sys.stdout)]
 )
+
+# Suppress verbose agent/orchestrator logs in dashboard context
+# Only show WARNING+ from these modules to reduce terminal noise
+for noisy_logger in ['agents.solara', 'agents.veridian', 'agents.hal_90',
+                      'orchestrator', 'sim_engine', 'mqtt_client']:
+    logging.getLogger(noisy_logger).setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
 
 # ── Module-level cache ──────────────────────────────────────────
