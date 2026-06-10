@@ -3,6 +3,7 @@ AETHER Simulation Engine
 Environmental flux modeling using SimPy for habitat management simulation.
 """
 
+import os
 import simpy
 import random
 from datetime import datetime, timedelta
@@ -83,10 +84,10 @@ class SimPyEnvironment:
             time=datetime.now()
         )
         
-        # Simulation parameters
-        self.solar_day_length = 24  # hours
-        self.simulation_speed = 1.0  # 1.0 = real time
-        self.anomaly_probability = 0.05  # 5% chance per hour
+        # Simulation parameters (from env with fallbacks)
+        self.anomaly_probability = float(os.getenv('ANOMALY_PROBABILITY', '0.05'))
+        self.solar_day_length = int(os.getenv('SOLAR_DAY_LENGTH', '24'))
+        self.simulation_speed = float(os.getenv('SIMULATION_SPEED', '1.0'))
         
         # Event tracking
         self.anomalies: List[AnomalyEvent] = []
