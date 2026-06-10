@@ -63,12 +63,16 @@ class SimPyEnvironment:
     and anomaly injection for testing agent responses.
     """
     
-    def __init__(self, env: Optional[simpy.Environment] = None):
+    def __init__(self, env: Optional[simpy.Environment] = None,
+                 array_efficiency: Optional[float] = None,
+                 battery_capacity: Optional[float] = None):
         """
         Initialize the simulation environment.
         
         Args:
             env: SimPy environment (creates new one if None)
+            array_efficiency: Solar array efficiency percentage (overrides env/fallback)
+            battery_capacity: Battery capacity in Wh (overrides env/fallback)
         """
         self.env = env if env else simpy.Environment()
         self.state = EnvironmentalState(
@@ -88,6 +92,16 @@ class SimPyEnvironment:
         self.anomaly_probability = float(os.getenv('ANOMALY_PROBABILITY', '0.05'))
         self.solar_day_length = int(os.getenv('SOLAR_DAY_LENGTH', '24'))
         self.simulation_speed = float(os.getenv('SIMULATION_SPEED', '1.0'))
+        
+        # Configurable simulation parameters (from param/env with fallbacks)
+        self.array_efficiency = float(
+            array_efficiency if array_efficiency is not None
+            else os.getenv('SOLAR_ARRAY_EFFICIENCY', '8')
+        )
+        self.battery_capacity = float(
+            battery_capacity if battery_capacity is not None
+            else os.getenv('BATTERY_CAPACITY', '10000')
+        )
         
         # Event tracking
         self.anomalies: List[AnomalyEvent] = []
@@ -128,13 +142,12 @@ class SimPyEnvironment:
                 self.state.solar_radiation = 0.0
             
             # Calculate power generation based on solar radiation
-            # Assume 8% efficiency and 10m² solar array (deliberately low to create resource contention)
-            self.state.power_generation = self.state.solar_radiation * 10 * 0.08
+            # Use configurable array efficiency and 10m² solar array
+            self.state.power_generation = self.state.solar_radiation * 10 * (self.array_efficiency / 100)
             
             # Update battery level based on net power
             net_power = self.state.power_generation - self.state.power_consumption
-            battery_capacity = 10000  # Wh
-            battery_change = (net_power / battery_capacity) * 100  # Percentage change
+            battery_change = (net_power / self.battery_capacity) * 100  # Percentage change
             self.state.battery_level = max(0, min(100, self.state.battery_level + battery_change))
             
             # Advance time by 1 hour
