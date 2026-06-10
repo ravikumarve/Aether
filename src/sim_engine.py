@@ -72,8 +72,8 @@ class SimPyEnvironment:
         """
         self.env = env if env else simpy.Environment()
         self.state = EnvironmentalState(
-            battery_level=75.0,
-            o2_level=21.0,
+            battery_level=50.0,
+            o2_level=19.8,
             temperature=22.0,
             co2_level=400.0,
             humidity=45.0,

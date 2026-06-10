@@ -54,8 +54,37 @@ def test_veridian_biological_audit():
     assert requirements.power_requirement_watts > 0
     print("✓ Veridian biological audit test passed")
 
+def test_hal_90_mediation():
+    """Test that Hal-90 can mediate a forced resource conflict."""
+    from agents.hal_90 import Hal90Agent, MediationResult
+    
+    hal_90 = Hal90Agent()
+    
+    # Scenario: Veridian's request (500W) exceeds Solara's threshold (300W)
+    # Battery is low (25%) and O2 is warning (19.2%) — conflict scenario
+    # Total power must be high enough so reserve stays positive
+    allocation = hal_90.mediate_conflict(
+        solara_threshold=300.0,
+        veridian_request=500.0,
+        current_battery=25.0,
+        current_o2=19.2,
+        current_temperature=22.0,
+        total_power=800.0  # Enough to keep reserve >= 100W
+    )
+    
+    assert allocation is not None
+    assert allocation.power_distribution is not None
+    assert allocation.power_distribution['veridian'] > 0
+    assert allocation.power_distribution['reserve'] >= 100.0, f"Reserve {allocation.power_distribution['reserve']} < 100"
+    assert allocation.safety_verification is True, f"Safety verification failed: {allocation}"
+    assert allocation.mediation_result in [MediationResult.APPROVED, MediationResult.MODIFIED, 
+                                           MediationResult.REJECTED, MediationResult.EMERGENCY_OVERRIDE]
+    print(f"✓ Hal-90 mediation test passed (result: {allocation.mediation_result.value})")
+
+
 if __name__ == "__main__":
     test_orchestrator_initialization()
     test_solara_power_audit()
     test_veridian_biological_audit()
+    test_hal_90_mediation()
     print("\n✅ All smoke tests passed!")
