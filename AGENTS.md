@@ -1,6 +1,18 @@
 ---
 ## 💾 Session Memory
 
+### 2026-06-10 19:04 - Phase I Complete: 6/6 tasks (core hardening sprint)
+**Agent:** codebase
+**Summary:** Delivered all 6 Phase I features — colour-coded phases, live mode, SVG sparklines, anomaly timeline, scenario presets, simulation comparison
+- **Phase colour-coding:** `--cyber-teal` CSS var, `phaseColorMap` in Alpine.js mapping phases to green/gold/cyan/white
+- **Live mode:** `live_payload` global updated each cycle, dynamic 1.2s polling during simulation
+- **SVG sparklines:** 3 Alpine.js helpers generating responsive SVG with gradient fill, end dot, threshold lines; replaced static bars in Panel 4 + Cycle History
+- **Anomaly timeline:** 24-cell colour-coded bar with 5 anomaly types, hover tooltips, legend, multi-type gradient split; `anomaly_types` added to telemetry
+- **Scenario presets:** 4 API routes (save/list/load/delete), JSON storage in `scenarios/` dir, save/load/delete UI with feedback
+- **Simulation comparison:** checkbox selection (max 2), side-by-side stats, overlay SVG sparklines, metric diffs with ▲/▼ arrows
+- **Sleek Live tab:** 2-column grid, 28px SVG height, tighter padding, inline labels
+- All 4 tests pass, 5/5 quality gates pass, 8 scenario API tests pass
+
 ### 2026-06-10 17:58 - Sprint AETHER-MQTT-1: MQTT Console & Agent Publish Integration
 **Agent:** codebase
 **Summary:** Added MQTT publish calls in orchestrator, MQTT console page in dashboard, sidebar nav + topbar indicator
