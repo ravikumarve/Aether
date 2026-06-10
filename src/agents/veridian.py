@@ -180,7 +180,7 @@ class VeridianAgent:
         # State
         self.current_requirements: Optional[BiologicalRequirements] = None
         self.retry_count = 0
-        self.max_retries = 3
+        self.max_retries = int(os.getenv('VERIDIAN_MAX_RETRIES', '3'))
         
         # Configuration (from env with fallbacks)
         self.o2_target = float(os.getenv('VERIDIAN_O2_TARGET', '21.0'))
