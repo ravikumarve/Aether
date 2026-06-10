@@ -3,6 +3,7 @@ AETHER Agent: Veridian
 Bio-Regenerative Supervisor - Regulates O2/CO2 exchange and hydroponic nutrient delivery.
 """
 
+import os
 import logging
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
@@ -181,8 +182,8 @@ class VeridianAgent:
         self.retry_count = 0
         self.max_retries = 3
         
-        # Configuration
-        self.o2_target = 21.0  # Percentage
+        # Configuration (from env with fallbacks)
+        self.o2_target = float(os.getenv('VERIDIAN_O2_TARGET', '21.0'))
         self.co2_target = 400.0  # PPM
         
         logger.info(f"Veridian agent initialized")
