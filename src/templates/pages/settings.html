@@ -1,0 +1,171 @@
+<div x-data="settingsState()" x-init="loadConfig()">
+  <h2 style="font-size:2.5rem;margin-bottom:0.5rem;font-family:'Cormorant Garamond',serif;">Simulation Settings</h2>
+  <p style="color:var(--text-muted);margin-bottom:2rem;font-size:1rem;">Configure the AETHER habitat simulation parameters.</p>
+
+  <div class="glass-card settings-section">
+    <h3>Simulation Parameters</h3>
+    <div class="settings-row">
+      <span class="settings-label">Max Cycles</span>
+      <input type="range" class="settings-slider" min="1" max="100" x-model="config.max_cycles" @input="dirty=true">
+      <span class="settings-value" x-text="config.max_cycles"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Anomaly Probability</span>
+      <input type="range" class="settings-slider" min="0" max="1" step="0.01" x-model="config.anomaly_probability" @input="dirty=true">
+      <span class="settings-value" x-text="Number(config.anomaly_probability).toFixed(2)"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Solar Day Length (hrs)</span>
+      <input type="range" class="settings-slider" min="12" max="48" x-model="config.solar_day_length" @input="dirty=true">
+      <span class="settings-value" x-text="config.solar_day_length"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Array Efficiency (%)</span>
+      <input type="range" class="settings-slider" min="1" max="30" x-model="config.array_efficiency" @input="dirty=true">
+      <span class="settings-value" x-text="config.array_efficiency + '%'"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Battery Capacity (Wh)</span>
+      <input type="range" class="settings-slider" min="1000" max="50000" step="100" x-model="config.battery_capacity" @input="dirty=true">
+      <span class="settings-value" x-text="config.battery_capacity"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Occupant Count</span>
+      <input type="range" class="settings-slider" min="1" max="20" x-model="config.occupant_count" @input="dirty=true">
+      <span class="settings-value" x-text="config.occupant_count"></span>
+    </div>
+  </div>
+
+  <div class="glass-card settings-section">
+    <h3>Initial Conditions</h3>
+    <div class="settings-row">
+      <span class="settings-label">Starting Battery (%)</span>
+      <input type="range" class="settings-slider" min="0" max="100" x-model="config.initial_battery" @input="dirty=true">
+      <span class="settings-value" x-text="Number(config.initial_battery).toFixed(0) + '%'"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Starting O2 (%)</span>
+      <input type="range" class="settings-slider" min="15" max="25" step="0.1" x-model="config.initial_o2" @input="dirty=true">
+      <span class="settings-value" x-text="Number(config.initial_o2).toFixed(1) + '%'"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Starting Temperature (°C)</span>
+      <input type="range" class="settings-slider" min="10" max="40" step="0.5" x-model="config.initial_temperature" @input="dirty=true">
+      <span class="settings-value" x-text="Number(config.initial_temperature).toFixed(1) + '°C'"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Starting CO2 (ppm)</span>
+      <input type="range" class="settings-slider" min="200" max="2000" step="10" x-model="config.initial_co2" @input="dirty=true">
+      <span class="settings-value" x-text="Number(config.initial_co2).toFixed(0)"></span>
+    </div>
+  </div>
+
+  <div class="glass-card settings-section">
+    <h3>Agent Configuration</h3>
+    <div class="settings-row">
+      <span class="settings-label">Solara Max Retries</span>
+      <input type="range" class="settings-slider" min="1" max="5" x-model="config.solara_retries" @input="dirty=true">
+      <span class="settings-value" x-text="config.solara_retries"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Veridian Max Retries</span>
+      <input type="range" class="settings-slider" min="1" max="5" x-model="config.veridian_retries" @input="dirty=true">
+      <span class="settings-value" x-text="config.veridian_retries"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Hal-90 Max Retries</span>
+      <input type="range" class="settings-slider" min="1" max="5" x-model="config.hal90_retries" @input="dirty=true">
+      <span class="settings-value" x-text="config.hal90_retries"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Veridian O2 Target (%)</span>
+      <input type="range" class="settings-slider" min="19" max="22" step="0.1" x-model="config.o2_target" @input="dirty=true">
+      <span class="settings-value" x-text="Number(config.o2_target).toFixed(1) + '%'"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Hal-90 Battery Threshold (%)</span>
+      <input type="range" class="settings-slider" min="20" max="60" x-model="config.battery_threshold" @input="dirty=true">
+      <span class="settings-value" x-text="Number(config.battery_threshold).toFixed(0) + '%'"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Solara Forecast Horizon (hrs)</span>
+      <input type="range" class="settings-slider" min="6" max="72" x-model="config.forecast_horizon" @input="dirty=true">
+      <span class="settings-value" x-text="config.forecast_horizon"></span>
+    </div>
+  </div>
+
+  <div class="glass-card settings-section">
+    <h3>Hal-90 Priority Weights</h3>
+    <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem;">Higher values = higher priority during resource conflict mediation.</p>
+    <div class="settings-row">
+      <span class="settings-label">Safety Priority</span>
+      <input type="range" class="settings-slider" min="0" max="1" step="0.05" x-model="config.hal90_priority_safety" @input="dirty=true">
+      <span class="settings-value" x-text="Number(config.hal90_priority_safety).toFixed(2)"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Battery Priority</span>
+      <input type="range" class="settings-slider" min="0" max="1" step="0.05" x-model="config.hal90_priority_battery" @input="dirty=true">
+      <span class="settings-value" x-text="Number(config.hal90_priority_battery).toFixed(2)"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">O2 Priority</span>
+      <input type="range" class="settings-slider" min="0" max="1" step="0.05" x-model="config.hal90_priority_o2" @input="dirty=true">
+      <span class="settings-value" x-text="Number(config.hal90_priority_o2).toFixed(2)"></span>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">Comfort Priority</span>
+      <input type="range" class="settings-slider" min="0" max="1" step="0.05" x-model="config.hal90_priority_comfort" @input="dirty=true">
+      <span class="settings-value" x-text="Number(config.hal90_priority_comfort).toFixed(2)"></span>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:1rem;margin-top:2rem;">
+    <button class="btn btn-primary" @click="saveConfig()" :disabled="!dirty">
+      💾 Save Settings
+    </button>
+    <button class="btn btn-outline" @click="resetConfig()">
+      ↩ Reset Defaults
+    </button>
+    <span x-show="saved" style="color:var(--bio-emerald);font-family:'JetBrains Mono',monospace;font-size:0.85rem;display:flex;align-items:center;">
+      ✓ Saved
+    </span>
+  </div>
+</div>
+
+<script>
+function settingsState() {
+  return {
+    config: {},
+    dirty: false,
+    saved: false,
+
+    async loadConfig() {
+      const resp = await fetch('/api/v1/config');
+      this.config = await resp.json();
+      this.dirty = false;
+    },
+
+    async saveConfig() {
+      const resp = await fetch('/api/v1/config', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(this.config)
+      });
+      if (resp.ok) {
+        this.dirty = false;
+        this.saved = true;
+        setTimeout(() => this.saved = false, 2000);
+      }
+    },
+
+    async resetConfig() {
+      const resp = await fetch('/api/v1/config/reset', { method: 'POST' });
+      const data = await resp.json();
+      this.config = data.config;
+      this.dirty = false;
+      this.saved = true;
+      setTimeout(() => this.saved = false, 2000);
+    }
+  };
+}
+</script>
