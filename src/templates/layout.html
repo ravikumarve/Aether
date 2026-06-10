@@ -840,6 +840,15 @@
                     <div class="status-dot" id="global-status-dot"></div>
                     <span class="mono" id="global-status-text" style="font-size: 0.7rem;">INITIALIZING</span>
                 </div>
+                <div class="status-indicator" style="gap:6px; padding:0.4rem 0.8rem;">
+                    <div class="status-dot" id="mqtt-status-dot"
+                         style="width:6px;height:6px;"
+                         :class="mqttConnected ? '' : 'idle'"></div>
+                    <span class="mono" id="mqtt-status-text"
+                          style="font-size:0.6rem;"
+                          :style="mqttConnected ? 'color:var(--bio-emerald)' : 'color:var(--text-muted)'"
+                          x-text="mqttConnected ? 'MQTT' : 'MQTT'"></span>
+                </div>
                 <span class="mono" style="color:var(--text-muted);font-size:0.65rem;">v1.0.0</span>
             </div>
         </header>
@@ -872,6 +881,11 @@
                    @click="activeNav = 'history'">
                     <span class="nav-icon">📊</span> History
                 </a>
+                <a class="nav-item" :class="{ 'active': activeNav === 'mqtt' }"
+                   hx-get="/mqtt" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
+                   @click="activeNav = 'mqtt'">
+                    <span class="nav-icon" style="font-size:0.8rem;">⟐</span> MQTT
+                </a>
             </nav>
             <div style="padding: 1.5rem; border-top: 1px solid var(--glass-border);">
                 <div class="mono" style="color:var(--text-muted);font-size:0.65rem;">AETHER v1.0.0</div>
@@ -897,6 +911,8 @@
         function appState() {
             return {
                 activeNav: 'dashboard',
+                mqttConnected: false,
+                mqttPollTimer: null,
 
                 init() {
                     // Sync active nav with URL on page load
@@ -905,7 +921,22 @@
                     else if (path === '/scenarios') this.activeNav = 'scenarios';
                     else if (path === '/agents') this.activeNav = 'agents';
                     else if (path === '/history') this.activeNav = 'history';
+                    else if (path === '/mqtt') this.activeNav = 'mqtt';
                     else this.activeNav = 'dashboard';
+
+                    // Poll MQTT status
+                    this.pollMQTT();
+                    this.mqttPollTimer = setInterval(() => this.pollMQTT(), 5000);
+                },
+
+                async pollMQTT() {
+                    try {
+                        const resp = await fetch('/api/v1/mqtt/status');
+                        const data = await resp.json();
+                        this.mqttConnected = data.is_connected || false;
+                    } catch(e) {
+                        this.mqttConnected = false;
+                    }
                 }
             };
         }
