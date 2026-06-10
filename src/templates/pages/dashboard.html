@@ -1,0 +1,442 @@
+<div class="container" x-data="dashboardState()" x-init="init()">
+
+    <!-- Running Banner -->
+    <div class="running-banner" :class="{ 'visible': running }">
+        <span class="loading-pulse"></span> Simulation in progress &mdash; {% raw %}{{ totalCycles || 0 }}{% endraw %} / 24 cycles
+    </div>
+
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="header-controls" style="width:100%;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <h2 style="font-size:2.5rem;font-family:'Cormorant Garamond',serif;margin:0;">Operational Dashboard</h2>
+                <p style="color:var(--text-muted);font-size:0.85rem;margin:0;">Real-time AETHER habitat simulation monitor</p>
+            </div>
+            <button class="btn btn-primary"
+                    hx-post="/api/v1/simulate"
+                    hx-target="#dashboard-grid"
+                    hx-swap="innerHTML"
+                    :disabled="running"
+                    x-on:htmx:after-request="onSimComplete()">
+                &#9654; Run Simulation
+            </button>
+        </div>
+    </header>
+
+    <!-- Dashboard Grid -->
+    <div id="dashboard-grid" class="dashboard-grid">
+
+        <!-- Panel 1: Pipeline Status -->
+        <div class="glass-card panel-pipeline">
+            <div class="card-title">
+                Pipeline Status
+                <span class="badge badge-success" x-show="running">LIVE</span>
+            </div>
+            <template x-if="!status && !running">
+                <div class="panel-placeholder">Awaiting first run &mdash; press <strong>Run Simulation</strong></div>
+            </template>
+            <template x-if="status || running">
+                <div>
+                    <div class="pipeline-phase" x-text="currentPhase || 'idle'"></div>
+                    <div class="pipeline-cycle">
+                        <span x-text="cycleCount || '0'"></span><span>/24 cycles</span>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <div class="metric-row">
+                            <span class="label">Uptime</span>
+                            <span class="value" x-text="uptimeText">0s</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="label">Anomalies</span>
+                            <span class="value" x-text="anomaliesHandled || 0"></span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="label">Emergencies</span>
+                            <span class="value" x-text="emergencyResponses || 0"></span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="label">Goldilocks</span>
+                            <span class="value" :class="isGoldilocks ? 'badge-success' : 'badge-danger'" x-text="isGoldilocks ? '✅ ZONE OK' : '❌ VIOLATION'" style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;font-weight:600;"></span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Panel 2: Agent Health -->
+        <div class="glass-card panel-agents">
+            <div class="card-title">
+                Agent Health
+                <span class="badge badge-success" x-show="allAgentsOk">ALL OK</span>
+            </div>
+            <template x-if="!status && !running">
+                <div class="panel-placeholder">Awaiting telemetry...</div>
+            </template>
+            <template x-if="status || running">
+                <div>
+                    <div class="agent-item" x-data="{ agent: getAgentStatus('solara') }">
+                        <div>
+                            <div class="agent-name">
+                                <div class="agent-dot" :style="'background:' + (agent ? 'var(--bio-emerald)' : 'var(--text-muted)')"></div>
+                                Solara
+                            </div>
+                            <div class="agent-role">Energy Grid Optimizer</div>
+                        </div>
+                        <div class="agent-metrics">
+                            <div x-text="agent ? '✓ Active' : '...'"></div>
+                            <div x-show="agent && agent.retry_count !== undefined" x-text="'retries: ' + agent.retry_count"></div>
+                        </div>
+                    </div>
+                    <div class="agent-item" x-data="{ agent: getAgentStatus('veridian') }">
+                        <div>
+                            <div class="agent-name">
+                                <div class="agent-dot" :style="'background:' + (agent ? 'var(--sun-ray)' : 'var(--text-muted)')"></div>
+                                Veridian
+                            </div>
+                            <div class="agent-role">Bio-Regenerative Supervisor</div>
+                        </div>
+                        <div class="agent-metrics">
+                            <div x-text="agent ? '✓ Active' : '...'"></div>
+                            <div x-show="agent && agent.retry_count !== undefined" x-text="'retries: ' + agent.retry_count"></div>
+                        </div>
+                    </div>
+                    <div class="agent-item" x-data="{ agent: getAgentStatus('hal_90') }">
+                        <div>
+                            <div class="agent-name">
+                                <div class="agent-dot" :style="'background:' + (agent ? 'var(--spore-glow)' : 'var(--text-muted)')"></div>
+                                Hal-90
+                            </div>
+                            <div class="agent-role">Habitat Mediator &amp; Command</div>
+                        </div>
+                        <div class="agent-metrics">
+                            <div x-text="agent ? '✓ Active' : '...'"></div>
+                            <div x-show="agent && agent.retry_count !== undefined" x-text="'retries: ' + agent.retry_count"></div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Panel 3: Quality Gates -->
+        <div class="glass-card panel-gates">
+            <div class="card-title">
+                Quality Gates
+                <span class="badge badge-success" x-show="allGatesPass">ALL PASS</span>
+            </div>
+            <template x-if="!status && !running">
+                <div class="panel-placeholder">Awaiting first run...</div>
+            </template>
+            <template x-if="status || running">
+                <div>
+                    <template x-for="(gateStatus, gateName) in qualityGates" :key="gateName">
+                        <div class="gate-item">
+                            <span class="gate-name" x-text="gateName.replace(/_/g, ' ')"></span>
+                            <span class="gate-status" :class="'gate-' + gateStatus" x-text="gateStatus.toUpperCase()"></span>
+                        </div>
+                    </template>
+                    <template x-if="Object.keys(qualityGates).length === 0">
+                        <div class="panel-placeholder">No gates evaluated yet</div>
+                    </template>
+                </div>
+            </template>
+        </div>
+
+        <!-- Panel 4: Environmental Telemetry -->
+        <div class="glass-card panel-telemetry">
+            <div class="card-title">
+                Environmental Telemetry
+                <span class="mono" style="color:var(--text-muted);font-size:0.6rem;" x-text="envTime"></span>
+            </div>
+            <template x-if="!env && !running">
+                <div class="panel-placeholder">Awaiting telemetry data...</div>
+            </template>
+            <template x-if="env || running">
+                <div class="telemetry-grid">
+                    <div class="telemetry-item" x-data="{ val: env?.battery_level || 0 }">
+                        <div class="telemetry-label">Battery</div>
+                        <div class="telemetry-value" x-text="val.toFixed(1) + '%'"></div>
+                        <div class="telemetry-bar">
+                            <div class="telemetry-bar-fill fill-emerald" :style="'width:' + val + '%'"></div>
+                        </div>
+                        <div class="telemetry-threshold">40% threshold</div>
+                    </div>
+                    <div class="telemetry-item" x-data="{ val: env?.o2_level || 0 }">
+                        <div class="telemetry-label">O2 Level</div>
+                        <div class="telemetry-value" x-text="val.toFixed(1) + '%'"></div>
+                        <div class="telemetry-bar">
+                            <div class="telemetry-bar-fill fill-gold" :style="'width:' + ((val/25)*100) + '%'"></div>
+                        </div>
+                        <div class="telemetry-threshold">19.5% minimum</div>
+                    </div>
+                    <div class="telemetry-item" x-data="{ val: env?.temperature || 0 }">
+                        <div class="telemetry-label">Temperature</div>
+                        <div class="telemetry-value" x-text="val.toFixed(1) + '°C'"></div>
+                        <div class="telemetry-bar">
+                            <div class="telemetry-bar-fill fill-cyan" :style="'width:' + ((val/30)*100) + '%'"></div>
+                        </div>
+                        <div class="telemetry-threshold">18-26°C zone</div>
+                    </div>
+                    <div class="telemetry-item" x-data="{ gen: env?.power_generation || 0, cons: env?.power_consumption || 0 }">
+                        <div class="telemetry-label">Power</div>
+                        <div class="telemetry-value" style="font-size:1.4rem;" x-text="gen.toFixed(0) + 'W / ' + cons.toFixed(0) + 'W'"></div>
+                        <div class="telemetry-bar">
+                            <div class="telemetry-bar-fill fill-violet" :style="'width:' + ((gen/1000)*100) + '%'"></div>
+                        </div>
+                        <div class="telemetry-threshold" x-text="'Solar: ' + (env?.solar_radiation || 0).toFixed(0) + ' W/m²'"></div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Panel 5: Anomaly Feed -->
+        <div class="glass-card panel-anomaly" x-data="{ autoscroll: true }">
+            <div class="card-title">
+                <span>Anomaly Feed</span>
+                <div class="toggle-row">
+                    <button class="toggle-switch" :class="{ 'active': autoscroll }" @click="autoscroll = !autoscroll" type="button"></button>
+                    <span>Auto-scroll</span>
+                </div>
+            </div>
+            <div class="anomaly-feed" x-ref="feed">
+                <template x-if="(!anomalies || anomalies.length === 0) && !running">
+                    <div class="anomaly-empty">No anomalies detected. System nominal.</div>
+                </template>
+                <template x-if="running">
+                    <div class="anomaly-item">
+                        <div class="anomaly-icon warning">⟳</div>
+                        <div class="anomaly-desc">Simulation running &mdash; monitoring for anomalies...</div>
+                    </div>
+                </template>
+                <template x-for="(a, i) in anomalies" :key="i">
+                    <div class="anomaly-item">
+                        <div class="anomaly-icon" :class="a.type === 'warning' ? 'warning' : a.type === 'critical' ? 'critical' : 'success'">
+                            <span x-text="a.type === 'warning' ? '!' : a.type === 'critical' ? '!!' : '✓'"></span>
+                        </div>
+                        <span class="anomaly-time" x-text="a.time"></span>
+                        <span class="anomaly-desc" x-text="a.message"></span>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cycle History Section -->
+    <div class="glass-card panel-history" style="margin-top: 1.25rem;" x-data="{ tab: 'live' }">
+        <div class="card-title" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+            <span>Cycle History</span>
+            <div class="tab-bar">
+                <button class="tab-btn" :class="{ 'active': tab === 'live' }" @click="tab = 'live'" type="button">Live</button>
+                <button class="tab-btn" :class="{ 'active': tab === 'history' }" @click="tab = 'history'" type="button">History</button>
+            </div>
+        </div>
+
+        <!-- Live Tab -->
+        <div x-show="tab === 'live'">
+            <div class="history-chart">
+                <div class="history-row">
+                    <span class="history-label">Battery</span>
+                    <div class="history-bar-bg">
+                        <div class="history-bar-fill fill-emerald" :style="'width:' + (env?.battery_level || 0) + '%'"></div>
+                    </div>
+                    <span class="history-value" x-text="(env?.battery_level || 0).toFixed(1) + '%'"></span>
+                </div>
+                <div class="history-row">
+                    <span class="history-label">O2</span>
+                    <div class="history-bar-bg">
+                        <div class="history-bar-fill fill-gold" :style="'width:' + ((env?.o2_level || 0) / 25 * 100) + '%'"></div>
+                    </div>
+                    <span class="history-value" x-text="(env?.o2_level || 0).toFixed(1) + '%'"></span>
+                </div>
+                <div class="history-row">
+                    <span class="history-label">Temperature</span>
+                    <div class="history-bar-bg">
+                        <div class="history-bar-fill fill-cyan" :style="'width:' + ((env?.temperature || 0) / 30 * 100) + '%'"></div>
+                    </div>
+                    <span class="history-value" x-text="(env?.temperature || 0).toFixed(1) + '°C'"></span>
+                </div>
+                <div class="history-row">
+                    <span class="history-label">Generation</span>
+                    <div class="history-bar-bg">
+                        <div class="history-bar-fill fill-violet" :style="'width:' + ((env?.power_generation || 0) / 1000 * 100) + '%'"></div>
+                    </div>
+                    <span class="history-value" x-text="(env?.power_generation || 0).toFixed(0) + 'W'"></span>
+                </div>
+                <div class="history-row">
+                    <span class="history-label">Consumption</span>
+                    <div class="history-bar-bg">
+                        <div class="history-bar-fill" :style="'width:' + ((env?.power_consumption || 0) / 1000 * 100) + '%;background:var(--text-muted)'"></div>
+                    </div>
+                    <span class="history-value" x-text="(env?.power_consumption || 0).toFixed(0) + 'W'"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div x-show="tab === 'history'">
+            <template x-if="!cycleHistory || cycleHistory.length === 0">
+                <div class="panel-placeholder">Run a simulation to see cycle history</div>
+            </template>
+            <template x-if="cycleHistory && cycleHistory.length > 0">
+                <div class="history-chart">
+                    <template x-for="(point, i) in cycleHistory.slice(-24)" :key="i">
+                        <div class="history-row" style="gap: 0.5rem;">
+                            <span class="history-label" style="width: 40px; font-size: 0.65rem;" x-text="'C' + point.cycle"></span>
+                            <div class="history-bar-bg" style="height: 8px;">
+                                <div class="history-bar-fill fill-emerald" :style="'width:' + point.battery + '%'"></div>
+                            </div>
+                            <div class="history-bar-bg" style="height: 8px;">
+                                <div class="history-bar-fill fill-gold" :style="'width:' + (point.o2 / 25 * 100) + '%'"></div>
+                            </div>
+                            <span class="history-value" style="width: 30px; font-size: 0.65rem;" x-text="point.battery.toFixed(0)"></span>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer style="padding: 2rem 0; border-top: 1px solid var(--glass-border); margin-top: 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <div class="mono" style="color: var(--text-muted); font-size: 0.75rem;">
+            AETHER v1.0.0 — Operational Dashboard
+        </div>
+        <div class="mono" style="color: var(--text-muted); font-size: 0.75rem;">
+            {{ current_year }} &copy; Autonomous Habitat Regulator
+        </div>
+    </footer>
+</div>
+
+<script>
+// ── Alpine.js Dashboard State ──
+function dashboardState() {
+    return {
+        status: null,
+        env: null,
+        qualityGates: {},
+        agentStatuses: {},
+        anomalies: [],
+        cycleHistory: [],
+
+        running: false,
+        totalCycles: 0,
+        statusText: 'INITIALIZING',
+        currentPhase: 'idle',
+        cycleCount: 0,
+        uptimeText: '0s',
+        anomaliesHandled: 0,
+        emergencyResponses: 0,
+        isGoldilocks: false,
+        envTime: '',
+        allAgentsOk: true,
+        allGatesPass: true,
+
+        pollInterval: null,
+
+        init() {
+            this.fetchStatus();
+            this.pollInterval = setInterval(() => this.fetchStatus(), 3000);
+        },
+
+        async fetchStatus() {
+            try {
+                const resp = await fetch('/api/v1/status');
+                const data = await resp.json();
+
+                if (data.simulation_running) {
+                    this.running = true;
+                    this.statusText = 'RUNNING';
+                } else if (data.status === 'COMPLETED') {
+                    this.running = false;
+                    this.statusText = 'COMPLETED';
+                } else if (data.status === 'ERROR') {
+                    this.running = false;
+                    this.statusText = 'ERROR';
+                } else {
+                    this.running = false;
+                    this.statusText = 'IDLE';
+                }
+
+                if (data.status && data.status !== 'idle') {
+                    this.status = data;
+                    this.env = data.environmental_summary || {};
+                    this.qualityGates = data.quality_gates || {};
+                    this.agentStatuses = data.agent_status || {};
+                    this.anomaliesHandled = data.anomalies_handled || 0;
+                    this.emergencyResponses = data.emergency_responses || 0;
+                    this.totalCycles = data.total_cycles || 0;
+
+                    const ps = data.pipeline_summary || {};
+                    this.currentPhase = ps.current_phase || 'idle';
+                    this.cycleCount = ps.cycle_count || 0;
+                    const uptime = ps.uptime || 0;
+                    this.uptimeText = uptime < 60 ? uptime.toFixed(1) + 's' : (uptime / 60).toFixed(1) + 'm';
+
+                    const es = this.env;
+                    this.isGoldilocks = es.is_goldilocks_zone || false;
+                    this.envTime = es.time ? new Date(es.time).toLocaleTimeString() : '';
+
+                    this.allAgentsOk = Object.keys(this.agentStatuses).length >= 3;
+                    const gateValues = Object.values(this.qualityGates);
+                    this.allGatesPass = gateValues.length > 0 && gateValues.every(v => v === 'pass');
+                }
+
+                this.updateAnomalies();
+            } catch (e) {
+                console.warn('Status fetch failed:', e);
+            }
+        },
+
+        async updateAnomalies() {
+            try {
+                const resp = await fetch('/api/v1/history');
+                const history = await resp.json();
+                this.cycleHistory = history;
+
+                const anoms = [];
+                for (const h of history) {
+                    if (h.active_anomalies > 0) {
+                        anoms.push({
+                            type: 'warning', time: 'C' + h.cycle,
+                            message: h.active_anomalies + ' active anomaly/anomalies at cycle ' + h.cycle
+                        });
+                    }
+                    if (h.is_goldilocks_zone === false) {
+                        anoms.push({
+                            type: 'critical', time: 'C' + h.cycle,
+                            message: 'Goldilocks Zone violation at cycle ' + h.cycle
+                        });
+                    }
+                }
+
+                if (this.emergencyResponses > 0 && !anoms.some(a => a.message.includes('Emergency'))) {
+                    anoms.push({
+                        type: 'success', time: 'END',
+                        message: this.emergencyResponses + ' emergency response(s) executed across ' + this.totalCycles + ' cycles'
+                    });
+                }
+
+                if (this.totalCycles > 0 && anoms.length === 0) {
+                    anoms.push({
+                        type: 'success', time: 'END',
+                        message: 'All ' + this.totalCycles + ' cycles completed — no anomalies detected'
+                    });
+                }
+
+                this.anomalies = anoms;
+            } catch (e) {}
+        },
+
+        getAgentStatus(name) {
+            return this.agentStatuses[name] || null;
+        },
+
+        onSimComplete() {
+            setTimeout(() => this.fetchStatus(), 500);
+        },
+
+        destroy() {
+            if (this.pollInterval) clearInterval(this.pollInterval);
+        }
+    };
+}
+</script>
