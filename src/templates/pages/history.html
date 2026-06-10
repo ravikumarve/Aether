@@ -5,7 +5,15 @@
   <div class="glass-card">
     <div class="card-title">
       <span>Past Runs</span>
-      <div style="display:flex;gap:0.5rem;">
+      <div style="display:flex;gap:0.5rem;align-items:center;">
+        <!-- Compare button — visible when exactly 2 selected -->
+        <button class="btn btn-primary btn-sm" x-show="selected.length === 2"
+                @click="openCompare()" style="padding:0.3rem 0.8rem;font-size:0.7rem;">
+          🔄 Compare Selected
+        </button>
+        <span x-show="selected.length > 0 && selected.length !== 2"
+              style="font-size:0.7rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;"
+              x-text="'(' + selected.length + ' selected — select exactly 2)'"></span>
         <button class="btn btn-sm" style="padding:0.3rem 0.8rem;font-size:0.7rem;" @click="exportAll()">Export All JSON</button>
         <button class="btn btn-sm" style="padding:0.3rem 0.8rem;font-size:0.7rem;border-color:var(--alert-red);color:var(--alert-red);" @click="clearAll()">Clear All</button>
       </div>
@@ -20,7 +28,8 @@
     <template x-if="runs.length > 0">
       <div>
         <!-- Table header -->
-        <div style="display:grid;grid-template-columns:40px 1fr 80px 100px 100px 100px 60px;gap:0.5rem;padding:0.75rem 1rem;background:rgba(0,0,0,0.2);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.5rem;">
+        <div style="display:grid;grid-template-columns:36px 40px 1fr 80px 100px 100px 100px 60px;gap:0.5rem;padding:0.75rem 1rem;background:rgba(0,0,0,0.2);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.5rem;">
+          <span></span>
           <span>#</span>
           <span>Date/Time</span>
           <span>Cycles</span>
@@ -32,10 +41,14 @@
 
         <!-- Table rows -->
         <template x-for="(run, i) in runs" :key="run.id">
-          <div style="display:grid;grid-template-columns:40px 1fr 80px 100px 100px 100px 60px;gap:0.5rem;padding:0.7rem 1rem;border-bottom:1px solid rgba(255,255,255,0.03);align-items:center;cursor:pointer;transition:background 0.2s;"
+          <div style="display:grid;grid-template-columns:36px 40px 1fr 80px 100px 100px 100px 60px;gap:0.5rem;padding:0.7rem 1rem;border-bottom:1px solid rgba(255,255,255,0.03);align-items:center;cursor:pointer;transition:background 0.2s;"
                @click="viewDetail(run.id)"
                @mouseover="$el.style.background='rgba(16,185,129,0.05)'"
                @mouseout="$el.style.background='transparent'">
+            <!-- Checkbox for comparison selection -->
+            <input type="checkbox" :checked="selected.includes(run.id)"
+                   @click.stop="toggleSelect(run.id)"
+                   style="accent-color:var(--bio-emerald);cursor:pointer;width:16px;height:16px;">
             <span style="color:var(--text-muted);font-family:'JetBrains Mono',monospace;font-size:0.75rem;" x-text="runs.length - i"></span>
             <span style="color:var(--text-main);font-size:0.85rem;" x-text="formatTime(run.timestamp)"></span>
             <span style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;" x-text="run.total_cycles"></span>
@@ -92,6 +105,69 @@
       </div>
     </div>
   </template>
+
+  <!-- Compare Modal -->
+  <template x-if="compare">
+    <div style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.75);backdrop-filter:blur(10px);z-index:1000;display:flex;align-items:center;justify-content:center;" @click.self="compare = null">
+      <div class="glass-card" style="max-width:900px;width:92%;max-height:85vh;overflow-y:auto;padding:2rem;">
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:1.5rem;">
+          <h3 style="font-size:1.6rem;font-family:'Cormorant Garamond',serif;margin:0;">Simulation Comparison</h3>
+          <button @click="compare = null" style="background:none;border:none;color:var(--text-muted);font-size:1.5rem;cursor:pointer;">✕</button>
+        </div>
+
+        <!-- Side-by-side stats -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+          <div style="background:rgba(0,0,0,0.2);padding:1rem;border-radius:12px;border-left:3px solid var(--bio-emerald);">
+            <div class="mono" style="font-size:0.6rem;color:var(--bio-emerald);">RUN A — #<span x-text="compare.a.id"></span></div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.8rem;" x-text="compare.a.ts"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+              <div><span class="mono" style="font-size:0.6rem;color:var(--text-muted);">Cycles</span><br><span class="mono" style="font-size:1.2rem;" x-text="compare.a.cycles"></span></div>
+              <div><span class="mono" style="font-size:0.6rem;color:var(--text-muted);">Status</span><br><span class="badge" :class="compare.a.status === 'COMPLETED' ? 'badge-success' : 'badge-danger'" style="font-size:0.6rem;" x-text="compare.a.status"></span></div>
+              <div><span class="mono" style="font-size:0.6rem;color:var(--text-muted);">Anomalies</span><br><span style="font-size:1rem;color:var(--alert-orange);" x-text="compare.a.anomalies"></span></div>
+              <div><span class="mono" style="font-size:0.6rem;color:var(--text-muted);">Emergencies</span><br><span style="font-size:1rem;color:var(--alert-red);" x-text="compare.a.emergencies"></span></div>
+            </div>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);padding:1rem;border-radius:12px;border-left:3px solid var(--sun-ray);">
+            <div class="mono" style="font-size:0.6rem;color:var(--sun-ray);">RUN B — #<span x-text="compare.b.id"></span></div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.8rem;" x-text="compare.b.ts"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+              <div><span class="mono" style="font-size:0.6rem;color:var(--text-muted);">Cycles</span><br><span class="mono" style="font-size:1.2rem;" x-text="compare.b.cycles"></span></div>
+              <div><span class="mono" style="font-size:0.6rem;color:var(--text-muted);">Status</span><br><span class="badge" :class="compare.b.status === 'COMPLETED' ? 'badge-success' : 'badge-danger'" style="font-size:0.6rem;" x-text="compare.b.status"></span></div>
+              <div><span class="mono" style="font-size:0.6rem;color:var(--text-muted);">Anomalies</span><br><span style="font-size:1rem;color:var(--alert-orange);" x-text="compare.b.anomalies"></span></div>
+              <div><span class="mono" style="font-size:0.6rem;color:var(--text-muted);">Emergencies</span><br><span style="font-size:1rem;color:var(--alert-red);" x-text="compare.b.emergencies"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metric diff highlights -->
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+          <template x-for="(diff, key) in compare.diffs" :key="key">
+            <div style="background:rgba(0,0,0,0.15);padding:0.5rem 1rem;border-radius:8px;display:flex;align-items:center;gap:0.5rem;">
+              <span class="mono" style="font-size:0.65rem;color:var(--text-muted);" x-text="key"></span>
+              <span style="font-size:0.85rem;color:var(--bio-emerald);" x-text="diff.a"></span>
+              <span style="color:var(--text-muted);font-size:0.7rem;">vs</span>
+              <span style="font-size:0.85rem;color:var(--sun-ray);" x-text="diff.b"></span>
+              <span :style="'font-size:0.7rem;color:' + (diff.arrow === '▲' ? 'var(--alert-red)' : diff.arrow === '▼' ? 'var(--bio-emerald)' : 'var(--text-muted)')" x-text="diff.arrow + ' ' + diff.pct"></span>
+            </div>
+          </template>
+        </div>
+
+        <!-- Overlay Sparklines -->
+        <div class="mono" style="font-size:0.65rem;color:var(--text-muted);margin-bottom:0.5rem;">BATTERY COMPARISON</div>
+        <div class="compare-chart" x-html="compare.charts.battery"></div>
+
+        <div class="mono" style="font-size:0.65rem;color:var(--text-muted);margin-top:1rem;margin-bottom:0.5rem;">O2 LEVEL COMPARISON</div>
+        <div class="compare-chart" x-html="compare.charts.o2"></div>
+
+        <!-- Close button -->
+        <div style="margin-top:1.5rem;display:flex;gap:1rem;">
+          <button class="btn btn-primary btn-sm" @click="exportCompare()">Export Comparison JSON</button>
+          <button class="btn btn-sm" @click="compare = null">Close</button>
+        </div>
+      </div>
+    </div>
+  </template>
 </div>
 
 <script>
@@ -99,6 +175,8 @@ function historyState() {
   return {
     runs: [],
     detail: null,
+    selected: [],
+    compare: null,
 
     async loadHistory() {
       try {
@@ -124,6 +202,137 @@ function historyState() {
       }
     },
 
+    // ── Comparison Selection ──
+
+    toggleSelect(id) {
+      const idx = this.selected.indexOf(id);
+      if (idx >= 0) {
+        this.selected.splice(idx, 1);
+      } else {
+        if (this.selected.length >= 2) return; // max 2
+        this.selected.push(id);
+      }
+    },
+
+    // ── Comparison Sparkline Helpers ──
+
+    comparePoints(valuesA, valuesB, width, height) {
+      // Returns overlay SVG with two lines
+      const n = Math.max(valuesA.length, valuesB.length, 2);
+      const allVals = [...valuesA, ...valuesB].filter(v => v > 0 || v === 0);
+      const max = Math.max(...allVals, 0.001);
+      const min = Math.min(...allVals, 0);
+      const range = max - min || 1;
+
+      const ptsA = valuesA.map((v, i) => {
+        const x = (i / (n - 1)) * width;
+        const y = height - ((v - min) / range) * (height * 0.85) - (height * 0.05);
+        return x.toFixed(1) + ',' + y.toFixed(1);
+      }).join(' ');
+
+      const ptsB = valuesB.map((v, i) => {
+        const x = (i / (n - 1)) * width;
+        const y = height - ((v - min) / range) * (height * 0.85) - (height * 0.05);
+        return x.toFixed(1) + ',' + y.toFixed(1);
+      }).join(' ');
+
+      const areaA = '0,' + height + ' ' + ptsA + ' ' + width + ',' + height;
+      const areaB = '0,' + height + ' ' + ptsB + ' ' + width + ',' + height;
+
+      return '<svg width="100%" height="60" viewBox="0 0 ' + width + ' ' + height + '" style="display:block;" xmlns="http://www.w3.org/2000/svg">' +
+        '<defs>' +
+        '<linearGradient id="cmpA" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/><stop offset="100%" stop-color="#10b981" stop-opacity="0.02"/></linearGradient>' +
+        '<linearGradient id="cmpB" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fcd34d" stop-opacity="0.2"/><stop offset="100%" stop-color="#fcd34d" stop-opacity="0.02"/></linearGradient>' +
+        '</defs>' +
+        '<polygon points="' + areaA + '" fill="url(#cmpA)"/>' +
+        '<polyline points="' + ptsA + '" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+        (valuesA.length > 0 ? '<circle cx="' + ptsA.split(' ').pop().split(',')[0] + '" cy="' + ptsA.split(' ').pop().split(',')[1] + '" r="3" fill="#10b981"/>' : '') +
+        '<polygon points="' + areaB + '" fill="url(#cmpB)"/>' +
+        '<polyline points="' + ptsB + '" fill="none" stroke="#fcd34d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4,2"/>' +
+        (valuesB.length > 0 ? '<circle cx="' + ptsB.split(' ').pop().split(',')[0] + '" cy="' + ptsB.split(' ').pop().split(',')[1] + '" r="3" fill="#fcd34d"/>' : '') +
+        '<line x1="0" y1="0" x2="0" y2="' + height + '" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>' +
+        '<line x1="' + width + '" y1="0" x2="' + width + '" y2="' + height + '" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>' +
+        '</svg>';
+    },
+
+    // ── Comparison Engine ──
+
+    async openCompare() {
+      if (this.selected.length !== 2) return;
+      const ids = this.selected.slice().sort((a, b) => a - b);
+      try {
+        const [respA, respB] = await Promise.all([
+          fetch('/api/v1/history/' + ids[0]),
+          fetch('/api/v1/history/' + ids[1])
+        ]);
+        const dataA = await respA.json();
+        const dataB = await respB.json();
+
+        const telA = dataA.telemetry || [];
+        const telB = dataB.telemetry || [];
+
+        // Extract metric series
+        const batA = telA.map(p => p.battery || 0);
+        const batB = telB.map(p => p.battery || 0);
+        const o2A = telA.map(p => p.o2 || 0);
+        const o2B = telB.map(p => p.o2 || 0);
+
+        // Compute diffs
+        const diff = (a, b, label) => ({
+          a: a,
+          b: b,
+          arrow: a > b ? '▲' : a < b ? '▼' : '—',
+          pct: b > 0 ? ((a - b) / b * 100).toFixed(1) + '%' : '—'
+        });
+
+        this.compare = {
+          a: {
+            id: dataA.id,
+            ts: this.formatTime(dataA.timestamp),
+            cycles: dataA.report?.total_cycles || telA.length,
+            status: dataA.report?.final_status || 'UNKNOWN',
+            anomalies: dataA.report?.anomalies_handled || 0,
+            emergencies: dataA.report?.emergency_responses || 0
+          },
+          b: {
+            id: dataB.id,
+            ts: this.formatTime(dataB.timestamp),
+            cycles: dataB.report?.total_cycles || telB.length,
+            status: dataB.report?.final_status || 'UNKNOWN',
+            anomalies: dataB.report?.anomalies_handled || 0,
+            emergencies: dataB.report?.emergency_responses || 0
+          },
+          diffs: {
+            'Anomalies': diff(dataA.report?.anomalies_handled || 0, dataB.report?.anomalies_handled || 0, 'anomalies'),
+            'Emergencies': diff(dataA.report?.emergency_responses || 0, dataB.report?.emergency_responses || 0, 'emergencies'),
+            'Battery End': diff(
+              telA.length > 0 ? telA[telA.length-1].battery : 0,
+              telB.length > 0 ? telB[telB.length-1].battery : 0,
+              '%'),
+            'O2 End': diff(
+              telA.length > 0 ? telA[telA.length-1].o2 : 0,
+              telB.length > 0 ? telB[telB.length-1].o2 : 0,
+              '%')
+          },
+          charts: {
+            battery: this.comparePoints(batA, batB, 400, 60),
+            o2: this.comparePoints(o2A, o2B, 400, 60)
+          }
+        };
+      } catch(e) {
+        console.warn('Compare failed:', e);
+      }
+    },
+
+    exportCompare() {
+      if (!this.compare) return;
+      const blob = new Blob([JSON.stringify(this.compare, null, 2)], {type: 'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'aether-compare.json';
+      a.click();
+    },
+
     exportRun(run) {
       const blob = new Blob([JSON.stringify(run, null, 2)], {type: 'application/json'});
       const a = document.createElement('a');
@@ -144,6 +353,7 @@ function historyState() {
       if (!confirm('Clear all simulation history?')) return;
       await fetch('/api/v1/history/clear', {method: 'POST'});
       this.runs = [];
+      this.selected = [];
     }
   };
 }
