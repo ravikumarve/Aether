@@ -1,0 +1,235 @@
+<div x-data="agentsState()" x-init="loadAgentData()">
+  <h2 style="font-size:2.5rem;margin-bottom:0.5rem;font-family:'Cormorant Garamond',serif;">Agent Console</h2>
+  <p style="color:var(--text-muted);margin-bottom:2rem;font-size:1rem;">Monitor agent status, review decision logs, and apply configuration overrides.</p>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;">
+
+    <!-- Solara Card -->
+    <div class="glass-card" style="padding:2rem;">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:1.5rem;">
+        <div>
+          <div class="mono" style="color:var(--sun-ray);font-size:0.65rem;margin-bottom:0.3rem;">NODE 01 // ENERGY</div>
+          <h3 style="font-size:1.8rem;font-family:'Cormorant Garamond',serif;color:var(--text-main);margin:0;">Solara</h3>
+        </div>
+        <div class="status-dot" :class="{ 'idle': !agentData.solara }" style="flex-shrink:0;"></div>
+      </div>
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1.5rem;">Energy Grid Optimizer</p>
+
+      <div class="agent-override-row">
+        <span class="mono" style="font-size:0.65rem;color:var(--text-muted);">Forecast Horizon</span>
+        <input type="range" class="settings-slider" min="6" max="72" x-model="overrides.solara.forecast_horizon">
+        <span class="mono" style="font-size:0.75rem;color:var(--text-main);" x-text="overrides.solara.forecast_horizon + 'h'"></span>
+      </div>
+      <div class="agent-override-row">
+        <span class="mono" style="font-size:0.65rem;color:var(--text-muted);">Max Retries</span>
+        <input type="range" class="settings-slider" min="1" max="5" x-model="overrides.solara.retries">
+        <span class="mono" style="font-size:0.75rem;color:var(--text-main);" x-text="overrides.solara.retries"></span>
+      </div>
+
+      <div style="margin-top:1rem;">
+        <div class="mono" style="font-size:0.65rem;color:var(--text-muted);margin-bottom:0.5rem;">LAST FORECAST</div>
+        <template x-if="agentData.solara">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--text-muted);">
+            <div>Confidence: <span style="color:var(--bio-emerald);" x-text="Number(agentData.solara.confidence || 0).toFixed(2)"></span></div>
+            <div x-show="agentData.solara.threshold">Threshold: <span style="color:var(--sun-ray);" x-text="Number(agentData.solara.threshold || 0).toFixed(0) + 'W'"></span></div>
+          </div>
+        </template>
+        <template x-if="!agentData.solara">
+          <div class="mono" style="font-size:0.7rem;color:var(--text-muted);">No data — run a simulation first</div>
+        </template>
+      </div>
+
+      <button class="btn btn-primary btn-sm" @click="applyOverrides('solara')" style="margin-top:1rem;width:100%;">Apply Overrides</button>
+    </div>
+
+    <!-- Veridian Card -->
+    <div class="glass-card" style="padding:2rem;">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:1.5rem;">
+        <div>
+          <div class="mono" style="color:var(--bio-emerald);font-size:0.65rem;margin-bottom:0.3rem;">NODE 02 // BIOLOGY</div>
+          <h3 style="font-size:1.8rem;font-family:'Cormorant Garamond',serif;color:var(--text-main);margin:0;">Veridian</h3>
+        </div>
+        <div class="status-dot" :class="{ 'idle': !agentData.veridian }" style="flex-shrink:0;"></div>
+      </div>
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1.5rem;">Bio-Regenerative Supervisor</p>
+
+      <div class="agent-override-row">
+        <span class="mono" style="font-size:0.65rem;color:var(--text-muted);">O2 Target (%)</span>
+        <input type="range" class="settings-slider" min="19" max="22" step="0.1" x-model="overrides.veridian.o2_target">
+        <span class="mono" style="font-size:0.75rem;color:var(--text-main);" x-text="Number(overrides.veridian.o2_target).toFixed(1) + '%'"></span>
+      </div>
+      <div class="agent-override-row">
+        <span class="mono" style="font-size:0.65rem;color:var(--text-muted);">Max Retries</span>
+        <input type="range" class="settings-slider" min="1" max="5" x-model="overrides.veridian.retries">
+        <span class="mono" style="font-size:0.75rem;color:var(--text-main);" x-text="overrides.veridian.retries"></span>
+      </div>
+
+      <div style="margin-top:1rem;">
+        <div class="mono" style="font-size:0.65rem;color:var(--text-muted);margin-bottom:0.5rem;">LAST REQUIREMENTS</div>
+        <template x-if="agentData.veridian">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--text-muted);">
+            <div>Power Req: <span style="color:var(--sun-ray);" x-text="Number(agentData.veridian.power_req || 0).toFixed(0) + 'W'"></span></div>
+            <div>O2 Target: <span style="color:var(--bio-emerald);" x-text="Number(agentData.veridian.o2_target || 0).toFixed(1) + '%'"></span></div>
+          </div>
+        </template>
+        <template x-if="!agentData.veridian">
+          <div class="mono" style="font-size:0.7rem;color:var(--text-muted);">No data — run a simulation first</div>
+        </template>
+      </div>
+
+      <button class="btn btn-primary btn-sm" @click="applyOverrides('veridian')" style="margin-top:1rem;width:100%;">Apply Overrides</button>
+    </div>
+
+    <!-- Hal-90 Card -->
+    <div class="glass-card" style="padding:2rem;">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:1.5rem;">
+        <div>
+          <div class="mono" style="color:var(--text-muted);font-size:0.65rem;margin-bottom:0.3rem;">NODE 03 // COMMAND</div>
+          <h3 style="font-size:1.8rem;font-family:'Cormorant Garamond',serif;color:var(--text-main);margin:0;">Hal-90</h3>
+        </div>
+        <div class="status-dot" :class="{ 'idle': !agentData.hal90 }" style="flex-shrink:0;"></div>
+      </div>
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1.5rem;">Habitat Mediator &amp; Command</p>
+
+      <div class="agent-override-row">
+        <span class="mono" style="font-size:0.65rem;color:var(--text-muted);">Battery Threshold</span>
+        <input type="range" class="settings-slider" min="20" max="60" x-model="overrides.hal90.battery_threshold">
+        <span class="mono" style="font-size:0.75rem;color:var(--text-main);" x-text="Number(overrides.hal90.battery_threshold).toFixed(0) + '%'"></span>
+      </div>
+      <div class="agent-override-row">
+        <span class="mono" style="font-size:0.65rem;color:var(--text-muted);">Max Retries</span>
+        <input type="range" class="settings-slider" min="1" max="5" x-model="overrides.hal90.retries">
+        <span class="mono" style="font-size:0.75rem;color:var(--text-main);" x-text="overrides.hal90.retries"></span>
+      </div>
+
+      <div style="margin-top:0.5rem;">
+        <div class="mono" style="font-size:0.65rem;color:var(--text-muted);margin-bottom:0.3rem;">PRIORITY WEIGHTS</div>
+        <div class="agent-override-row" style="padding:0.2rem 0;">
+          <span class="mono" style="font-size:0.6rem;color:var(--text-muted);">Safety</span>
+          <input type="range" class="settings-slider" min="0" max="1" step="0.05" x-model="overrides.hal90.priority_safety">
+          <span class="mono" style="font-size:0.65rem;color:var(--text-main);" x-text="Number(overrides.hal90.priority_safety).toFixed(2)"></span>
+        </div>
+        <div class="agent-override-row" style="padding:0.2rem 0;">
+          <span class="mono" style="font-size:0.6rem;color:var(--text-muted);">Battery</span>
+          <input type="range" class="settings-slider" min="0" max="1" step="0.05" x-model="overrides.hal90.priority_battery">
+          <span class="mono" style="font-size:0.65rem;color:var(--text-main);" x-text="Number(overrides.hal90.priority_battery).toFixed(2)"></span>
+        </div>
+        <div class="agent-override-row" style="padding:0.2rem 0;">
+          <span class="mono" style="font-size:0.6rem;color:var(--text-muted);">O2</span>
+          <input type="range" class="settings-slider" min="0" max="1" step="0.05" x-model="overrides.hal90.priority_o2">
+          <span class="mono" style="font-size:0.65rem;color:var(--text-main);" x-text="Number(overrides.hal90.priority_o2).toFixed(2)"></span>
+        </div>
+        <div class="agent-override-row" style="padding:0.2rem 0;">
+          <span class="mono" style="font-size:0.6rem;color:var(--text-muted);">Comfort</span>
+          <input type="range" class="settings-slider" min="0" max="1" step="0.05" x-model="overrides.hal90.priority_comfort">
+          <span class="mono" style="font-size:0.65rem;color:var(--text-main);" x-text="Number(overrides.hal90.priority_comfort).toFixed(2)"></span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-sm" @click="applyOverrides('hal90')" style="margin-top:1rem;width:100%;">Apply Overrides</button>
+    </div>
+  </div>
+
+  <!-- Agent Decision Log -->
+  <div class="glass-card" style="margin-top:1.5rem;">
+    <div class="card-title">Agent Decision Log
+      <span class="badge badge-success" x-show="logEntries.length > 0" x-text="logEntries.length + ' entries'"></span>
+    </div>
+    <template x-if="logEntries.length === 0">
+      <div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:2rem 0;">Run a simulation to see agent decision logs</div>
+    </template>
+    <div class="agent-log">
+      <template x-for="(entry, i) in logEntries" :key="i">
+        <div class="log-entry" x-html="entry"></div>
+      </template>
+    </div>
+  </div>
+</div>
+
+<script>
+function agentsState() {
+  return {
+    agentData: { solara: null, veridian: null, hal90: null },
+    overrides: {
+      solara: { forecast_horizon: 24, retries: 3 },
+      veridian: { o2_target: 21.0, retries: 3 },
+      hal90: { battery_threshold: 40, retries: 2, priority_safety: 1.0, priority_battery: 0.9, priority_o2: 0.85, priority_comfort: 0.5 }
+    },
+    logEntries: [],
+
+    async loadAgentData() {
+      // Load config for defaults
+      try {
+        const configResp = await fetch('/api/v1/config');
+        const config = await configResp.json();
+
+        this.overrides.solara.forecast_horizon = config.forecast_horizon;
+        this.overrides.solara.retries = config.solara_retries;
+        this.overrides.veridian.o2_target = config.o2_target;
+        this.overrides.veridian.retries = config.veridian_retries;
+        this.overrides.hal90.battery_threshold = config.battery_threshold;
+        this.overrides.hal90.retries = config.hal90_retries;
+        this.overrides.hal90.priority_safety = config.hal90_priority_safety;
+        this.overrides.hal90.priority_battery = config.hal90_priority_battery;
+        this.overrides.hal90.priority_o2 = config.hal90_priority_o2;
+        this.overrides.hal90.priority_comfort = config.hal90_priority_comfort;
+
+        // Load agent data from last completion report
+        const statusResp = await fetch('/api/v1/status');
+        const status = await statusResp.json();
+
+        if (status.agent_status) {
+          for (const [name, data] of Object.entries(status.agent_status)) {
+            if (name === 'solara') {
+              const forecast = data.current_forecast || {};
+              this.agentData.solara = { confidence: forecast.confidence, threshold: forecast.power_threshold_40pct };
+            } else if (name === 'veridian') {
+              const reqs = data.current_requirements || {};
+              this.agentData.veridian = { power_req: reqs.power_requirement_watts, o2_target: reqs.o2_target_level };
+            } else if (name === 'hal_90') {
+              this.agentData.hal90 = { status: true };
+            }
+          }
+        }
+
+        // Load logs from history telemetry
+        const historyResp = await fetch('/api/v1/history');
+        const history = await historyResp.json();
+
+        const entries = [];
+        for (const h of history) {
+          if (h.active_anomalies > 0) {
+            entries.push('<span style="color:var(--alert-orange);">⚠</span> [C' + h.cycle + '] <span style="color:var(--text-main);">' + h.active_anomalies + ' active anomaly/anomalies detected</span> — <span style="color:var(--bio-emerald);">emergency response dispatched</span>');
+          }
+          if (h.is_goldilocks_zone) {
+            entries.push('<span style="color:var(--bio-emerald);">✓</span> [C' + h.cycle + '] <span style="color:var(--text-main);">Goldilocks Zone maintained</span>');
+          }
+        }
+        if (status.status === 'COMPLETED') {
+          entries.push('<span style="color:var(--bio-emerald);">✓</span> [END] <span style="color:var(--text-main);">Pipeline complete — ' + (status.total_cycles || 0) + ' cycles, ' + (status.anomalies_handled || 0) + ' anomalies</span>');
+        }
+        this.logEntries = entries.slice(-50);
+      } catch(e) {
+        console.warn('Agent data load failed:', e);
+      }
+    },
+
+    async applyOverrides(agent) {
+      try {
+        await fetch('/api/v1/agents/override', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            agent: agent,
+            overrides: this.overrides[agent]
+          })
+        });
+        // Flash feedback by triggering a page re-fetch
+        htmx.ajax('GET', '/agents', { target: '#main-content', swap: 'innerHTML' });
+      } catch(e) {
+        console.warn('Override failed:', e);
+      }
+    }
+  };
+}
+</script>
