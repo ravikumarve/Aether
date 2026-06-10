@@ -643,7 +643,7 @@
 
         <!-- Running Banner -->
         <div class="running-banner" :class="{ 'visible': running }">
-            <span class="loading-pulse"></span> Simulation in progress &mdash; {{ totalCycles || 0 }} / 24 cycles
+            <span class="loading-pulse"></span> Simulation in progress &mdash; {% raw %}{{ totalCycles || 0 }}{% endraw %} / 24 cycles
         </div>
 
         <!-- Header -->
