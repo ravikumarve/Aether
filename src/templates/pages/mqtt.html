@@ -1,0 +1,195 @@
+<div class="mqtt-page" x-data="mqttConsole()" x-init="init()">
+    <!-- Page Header -->
+    <div class="dashboard-header">
+        <div>
+            <h2>MQTT Console</h2>
+            <p>Monitor and manage MQTT broker connections for inter-agent communication</p>
+        </div>
+    </div>
+
+    <!-- Connection Card -->
+    <div class="glass-card" style="margin-bottom: 1.5rem; padding: 1.5rem 2rem;">
+        <div class="card-title">
+            <span>Broker Connection</span>
+            <span class="badge badge-success" x-text="connected ? 'CONNECTED' : 'DISCONNECTED'" 
+                  :class="connected ? 'badge-success' : 'badge-warning'"></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
+            <div style="flex:1; min-width:200px;">
+                <div class="settings-row" style="border: none; padding: 0.5rem 0;">
+                    <span class="settings-label" style="width:100px;">Broker</span>
+                    <span class="mono" style="color:var(--text-main);" x-text="broker || 'localhost'"></span>
+                </div>
+                <div class="settings-row" style="border: none; padding: 0.5rem 0;">
+                    <span class="settings-label" style="width:100px;">Port</span>
+                    <span class="mono" style="color:var(--text-main);" x-text="port || '1883'"></span>
+                </div>
+            </div>
+            <div style="display:flex; gap:1rem;">
+                <button class="btn btn-primary btn-sm" 
+                        @click="connect()" 
+                        :disabled="connected"
+                        x-text="connected ? 'Connected' : 'Connect'">
+                </button>
+                <button class="btn btn-outline btn-sm" 
+                        @click="disconnect()" 
+                        :disabled="!connected"
+                        x-text="!connected ? 'Disconnected' : 'Disconnect'">
+                </button>
+            </div>
+        </div>
+        <div style="margin-top:0.75rem; font-size:0.8rem; color:var(--text-muted);">
+            <span x-text="statusMessage"></span>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="glass-card" style="text-align:center; padding:1.25rem;">
+            <div class="mono" style="font-size:0.65rem; color:var(--text-muted); margin-bottom:0.5rem;">Published</div>
+            <div style="font-size:2rem; font-weight:300; font-family:'JetBrains Mono',monospace; color:var(--bio-emerald);" x-text="published"></div>
+        </div>
+        <div class="glass-card" style="text-align:center; padding:1.25rem;">
+            <div class="mono" style="font-size:0.65rem; color:var(--text-muted); margin-bottom:0.5rem;">Received</div>
+            <div style="font-size:2rem; font-weight:300; font-family:'JetBrains Mono',monospace; color:var(--sun-ray);" x-text="received"></div>
+        </div>
+        <div class="glass-card" style="text-align:center; padding:1.25rem;">
+            <div class="mono" style="font-size:0.65rem; color:var(--text-muted); margin-bottom:0.5rem;">Errors</div>
+            <div style="font-size:2rem; font-weight:300; font-family:'JetBrains Mono',monospace; color:var(--alert-red);" x-text="errors"></div>
+        </div>
+        <div class="glass-card" style="text-align:center; padding:1.25rem;">
+            <div class="mono" style="font-size:0.65rem; color:var(--text-muted); margin-bottom:0.5rem;">Buffered</div>
+            <div style="font-size:2rem; font-weight:300; font-family:'JetBrains Mono',monospace; color:var(--text-muted);" x-text="buffered"></div>
+        </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+        <!-- Topics Table -->
+        <div class="glass-card">
+            <div class="card-title">AETHER Topics</div>
+            <table style="width:100%; border-collapse: collapse; font-size:0.85rem;">
+                <thead>
+                    <tr style="border-bottom:1px solid var(--glass-border);">
+                        <th style="padding:0.6rem 0.5rem; text-align:left; color:var(--text-muted); font-weight:500;">Topic</th>
+                        <th style="padding:0.6rem 0.5rem; text-align:left; color:var(--text-muted); font-weight:500;">Publisher</th>
+                        <th style="padding:0.6rem 0.5rem; text-align:left; color:var(--text-muted); font-weight:500;">Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                        <td style="padding:0.6rem 0.5rem; font-family:'JetBrains Mono',monospace; font-size:0.75rem;">solara/forecast</td>
+                        <td style="padding:0.6rem 0.5rem; color:var(--bio-emerald);">Solara</td>
+                        <td style="padding:0.6rem 0.5rem; color:var(--text-muted);">Power forecasts</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                        <td style="padding:0.6rem 0.5rem; font-family:'JetBrains Mono',monospace; font-size:0.75rem;">veridian/request</td>
+                        <td style="padding:0.6rem 0.5rem; color:var(--sun-ray);">Veridian</td>
+                        <td style="padding:0.6rem 0.5rem; color:var(--text-muted);">Resource requests</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                        <td style="padding:0.6rem 0.5rem; font-family:'JetBrains Mono',monospace; font-size:0.75rem;">hal_90/decision</td>
+                        <td style="padding:0.6rem 0.5rem; color:#22d3ee;">Hal-90</td>
+                        <td style="padding:0.6rem 0.5rem; color:var(--text-muted);">Allocation decisions</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                        <td style="padding:0.6rem 0.5rem; font-family:'JetBrains Mono',monospace; font-size:0.75rem;">anomaly/alert</td>
+                        <td style="padding:0.6rem 0.5rem; color:var(--alert-red);">Orchestrator</td>
+                        <td style="padding:0.6rem 0.5rem; color:var(--text-muted);">Anomaly alerts</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                        <td style="padding:0.6rem 0.5rem; font-family:'JetBrains Mono',monospace; font-size:0.75rem;">orchestrator/status</td>
+                        <td style="padding:0.6rem 0.5rem; color:var(--spore-glow);">Orchestrator</td>
+                        <td style="padding:0.6rem 0.5rem; color:var(--text-muted);">Pipeline status</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Message Log -->
+        <div class="glass-card">
+            <div class="card-title" style="margin-bottom:0.75rem;">
+                <span>Message Log</span>
+                <span class="mono" style="color:var(--text-muted); font-size:0.65rem;" x-text="log.length + ' messages'"></span>
+            </div>
+            <div class="anomaly-feed" style="max-height:320px;" x-ref="logContainer">
+                <template x-for="(msg, idx) in log" :key="idx">
+                    <div class="anomaly-item" style="padding:0.4rem 0; gap:6px;">
+                        <span class="mono" style="font-size:0.6rem; color:var(--text-muted); white-space:nowrap;" x-text="msg.time"></span>
+                        <span class="mono" style="font-size:0.65rem; color:var(--bio-emerald);" x-text="msg.topic"></span>
+                        <span style="font-size:0.8rem; color:var(--text-muted);" x-text="msg.summary"></span>
+                    </div>
+                </template>
+                <div x-show="log.length === 0" style="text-align:center; padding:2rem; color:var(--text-muted); font-size:0.85rem;">
+                    No messages yet. Run a simulation with an MQTT broker connected.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function mqttConsole() {
+            return {
+                connected: false,
+                broker: '',
+                port: '',
+                published: 0,
+                received: 0,
+                errors: 0,
+                buffered: 0,
+                statusMessage: '',
+                log: [],
+                pollTimer: null,
+
+                init() {
+                    this.pollStatus();
+                    this.pollTimer = setInterval(() => this.pollStatus(), 3000);
+                },
+
+                async pollStatus() {
+                    try {
+                        const resp = await fetch('/api/v1/mqtt/status');
+                        const data = await resp.json();
+                        this.connected = data.is_connected || false;
+                        this.broker = data.broker || '';
+                        this.port = data.port ? String(data.port) : '';
+                        this.published = data.messages_published || 0;
+                        this.received = data.messages_received || 0;
+                        this.errors = data.connection_errors || 0;
+                        this.buffered = data.buffered_messages || 0;
+                    } catch(e) {
+                        // silent
+                    }
+                },
+
+                async connect() {
+                    this.statusMessage = 'Connecting...';
+                    try {
+                        const resp = await fetch('/api/v1/mqtt/connect', { method: 'POST' });
+                        const data = await resp.json();
+                        if (resp.ok) {
+                            this.connected = true;
+                            this.statusMessage = 'Connected to ' + (data.broker || 'broker');
+                        } else {
+                            this.statusMessage = 'Connection failed: ' + (data.message || 'unknown error');
+                        }
+                    } catch(e) {
+                        this.statusMessage = 'Connection error: ' + e.message;
+                    }
+                    await this.pollStatus();
+                },
+
+                async disconnect() {
+                    this.statusMessage = 'Disconnecting...';
+                    try {
+                        await fetch('/api/v1/mqtt/disconnect', { method: 'POST' });
+                        this.connected = false;
+                        this.statusMessage = 'Disconnected';
+                    } catch(e) {
+                        this.statusMessage = 'Disconnect error: ' + e.message;
+                    }
+                    await this.pollStatus();
+                }
+            };
+        }
+    </script>
+</div>
