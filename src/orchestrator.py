@@ -6,6 +6,7 @@ Autonomous pipeline manager for multi-agent coordination and quality gates.
 import logging
 from typing import Dict, List, Optional, Callable
 from dataclasses import dataclass, field
+import dataclasses
 from datetime import datetime, timedelta
 from enum import Enum
 import json
@@ -253,6 +254,10 @@ class AgentsOrchestrator:
             if forecast.confidence >= 0.85:
                 self.pipeline_state.pass_quality_gate('solara_audit')
                 self.pipeline_state.update_agent_status('solara', AgentStatus.COMPLETE, forecast)
+                # Publish Solara forecast via MQTT
+                if self.mqtt_client:
+                    from mqtt_client import publish_solara_forecast
+                    publish_solara_forecast(self.mqtt_client, dataclasses.asdict(forecast))
             else:
                 self.pipeline_state.fail_quality_gate('solara_audit', 
                     f"Confidence {forecast.confidence:.2f} below 0.85")
@@ -293,6 +298,10 @@ class AgentsOrchestrator:
             if 19.5 <= requirements.o2_target_level <= 21.5:
                 self.pipeline_state.pass_quality_gate('veridian_audit')
                 self.pipeline_state.update_agent_status('veridian', AgentStatus.COMPLETE, requirements)
+                # Publish Veridian request via MQTT
+                if self.mqtt_client:
+                    from mqtt_client import publish_veridian_request
+                    publish_veridian_request(self.mqtt_client, dataclasses.asdict(requirements))
             else:
                 self.pipeline_state.fail_quality_gate('veridian_audit',
                     f"O2 target {requirements.o2_target_level} outside Goldilocks Zone")
@@ -448,6 +457,11 @@ class AgentsOrchestrator:
             # Solara: Shed non-critical load
             self.sim_engine.state.power_consumption *= 0.7  # Reduce non-essential consumption
             logger.info("Solara: Solar flare response — non-critical loads shed 30%")
+        
+        # Publish anomaly alert via MQTT
+        if self.mqtt_client:
+            from mqtt_client import publish_anomaly_alert
+            publish_anomaly_alert(self.mqtt_client, dataclasses.asdict(anomaly))
     
     def _publish_status(self) -> None:
         """Publish orchestrator status via MQTT."""
