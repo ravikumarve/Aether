@@ -259,6 +259,12 @@ def _run_simulation(max_cycles: int = 24,
                 name: status.value
                 for name, status in orchestrator.pipeline_state.quality_gates.items()
             }
+            # Collect unique active anomaly types for this cycle
+            active_anomaly_types = list(dict.fromkeys(
+                a.anomaly_type.value
+                for a in sim_engine.anomalies
+                if a.start_time + a.duration > sim_engine.state.time
+            ))
             telemetry.append({
                 'cycle': orchestrator.pipeline_state.cycle_count,
                 'battery': round(env_summary['battery_level'], 1),
@@ -269,6 +275,7 @@ def _run_simulation(max_cycles: int = 24,
                 'power_consumption': round(env_summary['power_consumption'], 1),
                 'is_goldilocks_zone': env_summary['is_goldilocks_zone'],
                 'active_anomalies': env_summary['active_anomalies'],
+                'anomaly_types': active_anomaly_types,
                 'phase': orchestrator.pipeline_state.current_phase.value,
                 'quality_gates': gate_summary,
             })
@@ -285,9 +292,7 @@ def _run_simulation(max_cycles: int = 24,
                     'cycle_count': orchestrator.pipeline_state.cycle_count,
                     'anomalies_detected': orchestrator.pipeline_state.anomalies_detected,
                     'emergency_responses': orchestrator.pipeline_state.emergency_responses,
-                    'uptime': orchestrator.pipeline_state.uptime.total_seconds()
-                        if hasattr(orchestrator.pipeline_state.uptime, 'total_seconds')
-                        else float(orchestrator.pipeline_state.uptime),
+                    'uptime': (datetime.now() - orchestrator.pipeline_state.start_time).total_seconds(),
                 },
                 'environmental_summary': {
                     'time': env_summary.get('time', datetime.now().isoformat()),
@@ -299,6 +304,7 @@ def _run_simulation(max_cycles: int = 24,
                     'power_consumption': env_summary['power_consumption'],
                     'is_goldilocks_zone': env_summary['is_goldilocks_zone'],
                     'active_anomalies': env_summary['active_anomalies'],
+                    'anomaly_types': active_anomaly_types,
                 },
                 'agent_status': {
                     name: 'running' if status in ('running', 'complete') else 'idle'

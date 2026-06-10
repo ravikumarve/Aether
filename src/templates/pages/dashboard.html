@@ -215,6 +215,52 @@
                 </template>
             </div>
         </div>
+
+        <!-- Panel 6: Anomaly Timeline -->
+        <div class="glass-card panel-timeline">
+            <div class="card-title">
+                Anomaly Timeline
+                <span class="badge" :class="hasAnomalyHistory ? 'badge-warning' : 'badge-success'" x-text="hasAnomalyHistory ? 'ANOMALIES DETECTED' : 'NOMINAL'"></span>
+            </div>
+            <template x-if="!cycleHistory || cycleHistory.length === 0">
+                <div class="panel-placeholder">Run a simulation to see anomaly timeline</div>
+            </template>
+            <template x-if="cycleHistory && cycleHistory.length > 0">
+                <div>
+                    <div class="timeline-bar">
+                        <template x-for="(point, i) in cycleHistory.slice(-24)" :key="i">
+                            <div class="timeline-cell"
+                                 :style="getCycleAnomalyStyle(point)"
+                                 :title="getCycleAnomalyTitle(point)"
+                                 x-text="point.cycle || ''"></div>
+                        </template>
+                    </div>
+                    <div class="timeline-legend">
+                        <span class="timeline-legend-item">
+                            <span class="legend-dot" style="background:transparent;border:1px solid rgba(255,255,255,0.15);"></span> Nominal
+                        </span>
+                        <span class="timeline-legend-item">
+                            <span class="legend-dot" style="background:#f59e0b;"></span> Dust Storm
+                        </span>
+                        <span class="timeline-legend-item">
+                            <span class="legend-dot" style="background:#ef4444;"></span> Pressure Leak
+                        </span>
+                        <span class="timeline-legend-item">
+                            <span class="legend-dot" style="background:#fcd34d;"></span> O2 Drop
+                        </span>
+                        <span class="timeline-legend-item">
+                            <span class="legend-dot" style="background:#22d3ee;"></span> Temp Spike
+                        </span>
+                        <span class="timeline-legend-item">
+                            <span class="legend-dot" style="background:#a78bfa;"></span> Solar Flare
+                        </span>
+                        <span class="timeline-legend-item">
+                            <span class="legend-dot" style="background:linear-gradient(135deg,#f59e0b 50%,#ef4444 50%);"></span> Multi-type
+                        </span>
+                    </div>
+                </div>
+            </template>
+        </div>
     </div>
 
     <!-- Cycle History Section -->
@@ -454,6 +500,51 @@ function dashboardState() {
 
         getAgentStatus(name) {
             return this.agentStatuses[name] || null;
+        },
+
+        // ── Anomaly Timeline Helpers ──
+
+        anomalyColorMap: {
+            'dust_storm': '#f59e0b',
+            'pressure_leak': '#ef4444',
+            'o2_drop': '#fcd34d',
+            'temperature_spike': '#22d3ee',
+            'solar_flare': '#a78bfa'
+        },
+
+        /** Get anomaly type colour from cycle data point */
+        getCycleAnomalyColor(point) {
+            const types = point.anomaly_types || [];
+            if (types.length === 0) return 'transparent';
+            return this.anomalyColorMap[types[0]] || 'var(--text-muted)';
+        },
+
+        /** Get anomaly CSS style for a timeline cell */
+        getCycleAnomalyStyle(point) {
+            const types = point.anomaly_types || [];
+            if (types.length === 0) {
+                return 'background:transparent;border-color:rgba(255,255,255,0.06);cursor:default;';
+            }
+            if (types.length === 1) {
+                const color = this.anomalyColorMap[types[0]] || 'var(--text-muted)';
+                return 'background:' + color + ';border-color:' + color + ';box-shadow:0 0 6px ' + color + '40;';
+            }
+            // Multiple types: diagonal split
+            const c1 = this.anomalyColorMap[types[0]] || 'var(--text-muted)';
+            const c2 = this.anomalyColorMap[types[1]] || 'var(--text-muted)';
+            return 'background:linear-gradient(135deg,' + c1 + ' 50%,' + c2 + ' 50%);border-color:' + c1 + ';';
+        },
+
+        /** Get tooltip text for a timeline cell */
+        getCycleAnomalyTitle(point) {
+            const types = point.anomaly_types || [];
+            if (types.length === 0) return 'Cycle ' + point.cycle + ': nominal';
+            return 'Cycle ' + point.cycle + ': ' + types.join(', ') + ' — Battery:' + point.battery + '% O2:' + point.o2 + '%';
+        },
+
+        /** Check if any anomaly exists across all cycles */
+        get hasAnomalyHistory() {
+            return this.cycleHistory.some(p => (p.anomaly_types || []).length > 0);
         },
 
         // ── SVG Sparkline Helpers ──
