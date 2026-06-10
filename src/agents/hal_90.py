@@ -78,14 +78,18 @@ class ResourceAllocation:
 class ConflictResolutionMatrix:
     """Matrix for resolving conflicts between agent requests."""
     
-    def __init__(self):
+    def __init__(self, priority_weights: Optional[Dict[str, float]] = None):
         self.resolution_history: List[Dict] = []
-        self.priority_weights = {
+        self.priority_weights = priority_weights or {
             'safety': 1.0,
             'battery': 0.9,
             'o2': 0.85,
             'comfort': 0.5
         }
+    
+    def update_weights(self, new_weights: Dict[str, float]) -> None:
+        """Update priority weights from dashboard config."""
+        self.priority_weights.update(new_weights)
     
     def resolve_conflict(self, solara_threshold: float,
                        veridian_request: float,
@@ -158,26 +162,28 @@ class ConflictResolutionMatrix:
         return result, resolution_details
     
     def _calculate_battery_priority(self, battery_level: float) -> float:
-        """Calculate battery priority score (0.0 to 1.0)."""
+        """Calculate battery priority score (0.0 to 1.0), weighted."""
+        weight = self.priority_weights.get('battery', 0.9)
         if battery_level < 20:
-            return 1.0  # Critical
+            return 1.0 * weight
         elif battery_level < 40:
-            return 0.8  # High
+            return 0.8 * weight
         elif battery_level < 60:
-            return 0.5  # Medium
+            return 0.5 * weight
         else:
-            return 0.2  # Low
+            return 0.2 * weight
     
     def _calculate_o2_priority(self, o2_level: float) -> float:
-        """Calculate O2 priority score (0.0 to 1.0)."""
+        """Calculate O2 priority score (0.0 to 1.0), weighted."""
+        weight = self.priority_weights.get('o2', 0.85)
         if o2_level < 19.0:
-            return 1.0  # Critical
+            return 1.0 * weight
         elif o2_level < 19.5:
-            return 0.9  # High
+            return 0.9 * weight
         elif o2_level < 20.0:
-            return 0.6  # Medium
+            return 0.6 * weight
         else:
-            return 0.3  # Low
+            return 0.3 * weight
 
 
 class SafetyProtocolOverride:
@@ -329,9 +335,14 @@ class Hal90Agent:
         # State
         self.current_allocation: Optional[ResourceAllocation] = None
         self.retry_count = 0
-        self.max_retries = 2
+        self.max_retries = int(os.getenv('HAL_90_MAX_RETRIES', '2'))
         
         logger.info(f"Hal-90 agent initialized")
+    
+    def set_priority_weights(self, weights: Dict[str, float]) -> None:
+        """Apply priority weights from dashboard UI to conflict resolution."""
+        self.conflict_matrix.update_weights(weights)
+        logger.info(f"Hal-90 priority weights updated: {weights}")
     
     def mediate_conflict(self, solara_threshold: float,
                         veridian_request: float,
