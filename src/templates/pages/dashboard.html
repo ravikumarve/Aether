@@ -34,7 +34,7 @@
             </template>
             <template x-if="status || running">
                 <div>
-                    <div class="pipeline-phase" x-text="currentPhase || 'idle'"></div>
+                    <div class="pipeline-phase" x-text="currentPhase || 'idle'" :style="'color:' + phaseColor"></div>
                     <div class="pipeline-cycle">
                         <span x-text="cycleCount || '0'"></span><span>/24 cycles</span>
                     </div>
@@ -328,6 +328,22 @@ function dashboardState() {
         allGatesPass: true,
 
         pollInterval: null,
+
+        // Phase → colour mapping for pipeline status
+        phaseColorMap: {
+            'idle': 'var(--text-muted)',
+            'initialization': 'var(--text-main)',
+            'solara audit': 'var(--bio-emerald)',
+            'veridian audit': 'var(--sun-ray)',
+            'hal 90 mediation': 'var(--cyber-teal)',
+            'resource allocation': 'var(--text-main)',
+            'continuous loop': 'var(--text-main)',
+            'complete': 'var(--spore-glow)'
+        },
+
+        get phaseColor() {
+            return this.phaseColorMap[this.currentPhase] || 'var(--text-muted)';
+        },
 
         init() {
             this.fetchStatus();
