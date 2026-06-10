@@ -55,6 +55,20 @@ completion_report: Optional[Dict] = None
 cycle_telemetry: List[Dict] = []
 simulation_running: bool = False
 
+# MQTT client instance (lazy-initialized on connect)
+mqtt_client_instance: Optional[any] = None
+
+MQTT_STATE: Dict = {
+    'is_connected': False,
+    'broker': None,
+    'port': None,
+    'messages_published': 0,
+    'messages_received': 0,
+    'connection_errors': 0,
+    'buffered_messages': 0,
+    'registered_handlers': 0,
+}
+
 
 # ── Default Configuration ───────────────────────────────────────
 # Full set of configurable parameters for the AETHER simulation
@@ -171,7 +185,9 @@ def _run_simulation(max_cycles: int = 24,
         sim_engine.state.power_consumption = float(merged.get('initial_power_consumption', 500.0))
         sim_engine.state.occupant_count = int(merged.get('occupant_count', 4))
 
-        orchestrator = AgentsOrchestrator(sim_engine, None)
+        # Pass MQTT client instance if connected, else None
+        mqtt_client = mqtt_client_instance if mqtt_client_instance and mqtt_client_instance.is_connected else None
+        orchestrator = AgentsOrchestrator(sim_engine, mqtt_client)
 
         # Apply Hal-90 priority weights from dashboard config
         hal90_weights = {
@@ -413,6 +429,20 @@ async def history_page(request: Request):
     return templates.TemplateResponse("layout.html", ctx)
 
 
+@app.get("/mqtt", response_class=HTMLResponse)
+async def mqtt_page(request: Request):
+    """Serve the MQTT console page fragment (or full page for direct access)."""
+    ctx = {
+        "request": request,
+        "mqtt_state": MQTT_STATE,
+        "current_year": datetime.now().year
+    }
+    if _is_htmx(request):
+        return templates.TemplateResponse("pages/mqtt.html", ctx)
+    ctx["initial_page"] = "mqtt"
+    return templates.TemplateResponse("layout.html", ctx)
+
+
 # ══════════════════════════════════════════════════════════════════
 # LEGACY ROUTE (backward compat with existing frontend)
 # ══════════════════════════════════════════════════════════════════
@@ -511,6 +541,98 @@ async def api_health():
             'has_report': completion_report is not None,
             'telemetry_points': len(cycle_telemetry)
         }, cls=DateTimeEncoder),
+        media_type="application/json"
+    )
+
+
+# ── MQTT API ──
+
+
+@app.get("/api/v1/mqtt/status")
+async def api_mqtt_status():
+    """GET /api/v1/mqtt/status — Return MQTT client state."""
+    global mqtt_client_instance, MQTT_STATE
+
+    if mqtt_client_instance:
+        try:
+            stats = mqtt_client_instance.get_statistics()
+            MQTT_STATE.update(stats)
+        except Exception:
+            pass
+
+    return Response(
+        content=json.dumps(MQTT_STATE, cls=DateTimeEncoder),
+        media_type="application/json"
+    )
+
+
+@app.post("/api/v1/mqtt/connect")
+async def api_mqtt_connect():
+    """POST /api/v1/mqtt/connect — Connect to MQTT broker."""
+    global mqtt_client_instance, MQTT_STATE
+
+    if mqtt_client_instance and mqtt_client_instance.is_connected:
+        return Response(
+            content=json.dumps({"status": "already_connected", "broker": MQTT_STATE.get("broker")}),
+            media_type="application/json"
+        )
+
+    try:
+        from mqtt_client import AetherMQTTClient
+
+        broker = os.getenv('MQTT_BROKER', 'localhost')
+        port = int(os.getenv('MQTT_PORT', '1883'))
+
+        mqtt_client_instance = AetherMQTTClient(broker=broker, port=port)
+        connected = mqtt_client_instance.connect()
+
+        if connected:
+            MQTT_STATE.update(mqtt_client_instance.get_statistics())
+            MQTT_STATE['broker'] = broker
+            MQTT_STATE['port'] = port
+            return Response(
+                content=json.dumps({"status": "connected", "broker": broker, "port": port}),
+                media_type="application/json"
+            )
+        else:
+            return Response(
+                content=json.dumps({"status": "error", "message": "Connection failed"}),
+                status_code=502,
+                media_type="application/json"
+            )
+    except Exception as e:
+        return Response(
+            content=json.dumps({"status": "error", "message": str(e)}),
+            status_code=500,
+            media_type="application/json"
+        )
+
+
+@app.post("/api/v1/mqtt/disconnect")
+async def api_mqtt_disconnect():
+    """POST /api/v1/mqtt/disconnect — Disconnect from MQTT broker."""
+    global mqtt_client_instance, MQTT_STATE
+
+    if mqtt_client_instance:
+        try:
+            mqtt_client_instance.disconnect()
+        except Exception:
+            pass
+        mqtt_client_instance = None
+
+    MQTT_STATE = {
+        'is_connected': False,
+        'broker': None,
+        'port': None,
+        'messages_published': 0,
+        'messages_received': 0,
+        'connection_errors': 0,
+        'buffered_messages': 0,
+        'registered_handlers': 0,
+    }
+
+    return Response(
+        content=json.dumps({"status": "disconnected"}),
         media_type="application/json"
     )
 
