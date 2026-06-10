@@ -7,20 +7,18 @@
 
     <!-- Header -->
     <header class="dashboard-header">
-        <div class="header-controls" style="width:100%;display:flex;justify-content:space-between;align-items:center;">
-            <div>
-                <h2 style="font-size:2.5rem;font-family:'Cormorant Garamond',serif;margin:0;">Operational Dashboard</h2>
-                <p style="color:var(--text-muted);font-size:0.85rem;margin:0;">Real-time AETHER habitat simulation monitor</p>
-            </div>
-            <button class="btn btn-primary"
-                    hx-post="/api/v1/simulate"
-                    hx-target="#dashboard-grid"
-                    hx-swap="innerHTML"
-                    :disabled="running"
-                    x-on:htmx:after-request="onSimComplete()">
-                &#9654; Run Simulation
-            </button>
+        <div>
+            <h2>Operational Dashboard</h2>
+            <p>Real-time AETHER habitat simulation monitor</p>
         </div>
+        <button class="btn btn-primary"
+                hx-post="/api/v1/simulate"
+                hx-target="#dashboard-grid"
+                hx-swap="innerHTML"
+                :disabled="running"
+                x-on:htmx:after-request="onSimComplete()">
+            &#9654; Run Simulation
+        </button>
     </header>
 
     <!-- Dashboard Grid -->
