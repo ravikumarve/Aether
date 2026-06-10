@@ -1,6 +1,18 @@
 ---
 ## 💾 Session Memory
 
+### 2026-06-10 14:55 - Sprint AETHER-DASH-2: Multi-Page Product Dashboard
+**Agent:** codebase
+**Summary:** Turned single-page dashboard into a real multi-page product with 5-page HTMX navigation, config store, scenario designer, agents console, and history browser
+- **src/dashboard.py:** Refactored with `DEFAULT_CONFIG`/`current_config` module-level stores (22 params), `simulation_history` for past run tracking, modified `_run_simulation()` with `config_overrides` + `anomaly_schedule` support, env var save/restore for agent compatibility, initial conditions override after SimPyEnvironment creation. Added 12+ new API routes (config CRUD, scenario run, history CRUD, agents override). Root route now serves `layout.html` shell.
+- **src/templates/layout.html:** Created full HTML shell with app-shell grid (240px sidebar + topbar + content area). Sidebar has 5 nav items with HTMX fragment loading and Alpine.js active-state tracking. Neural particle canvas from landing-3. All global CSS variables and shared component styles extracted from dashboard.html.
+- **src/templates/pages/dashboard.html:** Stripped to HTMX fragment — no `<html>`/`<head>`/`<body>`/canvas/CDN scripts. Pure content div + Alpine.js `dashboardState()` function. Loaded into `#main-content` via HTMX navigation.
+- **src/templates/pages/settings.html:** 4 glass-card sections with 22 configurable sliders (simulation params, initial conditions, agent config, Hal-90 priority weights). Alpine.js dirty tracking, Save/Reset with API integration.
+- **src/templates/pages/scenarios.html:** Initial condition sliders + anomaly injection designer (5 anomaly types, severity/cycle controls, add/remove list). Run Scenario POSTs to `/api/v1/scenario/run` with scheduled anomalies.
+- **src/templates/pages/agents.html:** 3-column agent cards (Solara/Veridian/Hal-90) with color-coded branding, status dots, override sliders, last-forecast display, Apply Overrides button, decision log from telemetry history.
+- **src/templates/pages/history.html:** Past runs table with date/cycles/anomalies/emergencies/status columns. Detail modal with config snapshot. Single-run and bulk JSON export. Clear All with confirmation.
+- **Verification:** 15 integration tests PASS, all 22 API routes registered, all 5 quality gates PASS on CLI pipeline, backward compat with `/legacy` route preserved.
+
 ### 2026-06-10 14:10 - Sprint AETHER-DASH-1: Dashboard MVP
 **Agent:** codebase
 **Summary:** Built FastAPI + HTMX + Alpine.js operational dashboard with landing-1 aesthetic and landing-3 neural canvas
