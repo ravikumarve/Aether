@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AETHER | Operational Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@2.0.0"></script>
+    <style>
+        :root {
+            /* Organic Dark Palette — from landing-1 */
+            --deep-canopy: #020a06;
+            --moss-dark: #07170e;
+            --bio-emerald: #10b981;
+            --bio-emerald-dark: #059669;
+            --sun-ray: #fcd34d;
+            --spore-glow: #a7f3d0;
+            --text-main: #f0fdf4;
+            --text-muted: #9ca3af;
+            --alert-red: #ef4444;
+            --alert-orange: #f59e0b;
+
+            /* Glassmorphism — from landing-1 */
+            --glass-bg: rgba(7, 23, 14, 0.4);
+            --glass-border: rgba(16, 185, 129, 0.2);
+            --glass-highlight: rgba(255, 255, 255, 0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--deep-canopy);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Neural Particle Canvas — from landing-3, emerald palette */
+        #neural-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.7;
+            background: radial-gradient(circle at 50% 50%, var(--moss-dark) 0%, var(--deep-canopy) 100%);
+        }
+
+        /* Typography */
+        h1, h2, h3, h4, .serif {
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* ── Header / Top Bar ── */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: 4px;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        .logo svg {
+            width: 28px;
+            height: 28px;
+            filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6));
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.5rem 1rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--bio-emerald);
+            box-shadow: 0 0 10px var(--bio-emerald);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.idle { background: var(--text-muted); box-shadow: none; animation: none; }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0.8rem 1.8rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 100px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+            color: var(--spore-glow);
+            border: 1px solid var(--bio-emerald);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--bio-emerald);
+            color: var(--deep-canopy);
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1.2rem;
+            font-size: 0.8rem;
+        }
+
+        /* ── Glass Card ── from landing-1 terrarium-card */
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, var(--glass-highlight) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+
+        .card-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--bio-emerald);
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title .badge {
+            font-size: 0.6rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 50px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--bio-emerald); }
+        .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--alert-orange); }
+        .badge-danger { background: rgba(239, 68, 68, 0.2); color: var(--alert-red); }
+
+        /* ── Dashboard Grid ── */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        /* Individual panel spans */
+        .panel-pipeline { grid-column: span 1; }
+        .panel-agents { grid-column: span 1; }
+        .panel-gates { grid-column: span 1; }
+        .panel-telemetry { grid-column: span 2; }
+        .panel-anomaly { grid-column: span 3; }
+        .panel-history { grid-column: span 5; }
+
+        /* ── Pipeline Status ── */
+        .pipeline-phase {
+            font-size: 1.8rem;
+            font-weight: 600;
+            font-family: 'Cormorant Garamond', serif;
+            color: var(--spore-glow);
+            margin-bottom: 0.5rem;
+            text-transform: capitalize;
+        }
+
+        .pipeline-cycle {
+            font-size: 3rem;
+            font-weight: 300;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-main);
+        }
+
+        .pipeline-cycle span {
+            font-size: 1rem;
+            color: var(--text-muted);
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-size: 0.85rem;
+        }
+
+        .metric-row .label { color: var(--text-muted); }
+        .metric-row .value { color: var(--text-main); font-weight: 500; }
+
+        /* ── Agent Health ── */
+        .agent-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .agent-item:last-child { border-bottom: none; }
+
+        .agent-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .agent-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .agent-role {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .agent-metrics {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: right;
+        }
+
+        /* ── Quality Gates ── */
+        .gate-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-size: 0.85rem;
+        }
+
+        .gate-item:last-child { border-bottom: none; }
+
+        .gate-name {
+            color: var(--text-muted);
+            text-transform: capitalize;
+        }
+
+        .gate-status {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .gate-pass { background: rgba(16, 185, 129, 0.15); color: var(--bio-emerald); }
+        .gate-fail { background: rgba(239, 68, 68, 0.15); color: var(--alert-red); }
+        .gate-pending { background: rgba(156, 163, 175, 0.1); color: var(--text-muted); }
+
+        /* ── Telemetry ── */
+        .telemetry-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .telemetry-item {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .telemetry-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .telemetry-value {
+            font-size: 2rem;
+            font-weight: 300;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-main);
+        }
+
+        .telemetry-bar {
+            margin-top: 0.5rem;
+            height: 4px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .telemetry-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .fill-emerald { background: var(--bio-emerald); }
+        .fill-gold { background: var(--sun-ray); }
+        .fill-cyan { background: #22d3ee; }
+        .fill-violet { background: #a78bfa; }
+
+        .telemetry-threshold {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 0.25rem;
+        }
+
+        /* ── Anomaly Feed ── */
+        .anomaly-feed {
+            max-height: 200px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--glass-border) transparent;
+        }
+
+        .anomaly-feed::-webkit-scrollbar { width: 4px; }
+        .anomaly-feed::-webkit-scrollbar-track { background: transparent; }
+        .anomaly-feed::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
+
+        .anomaly-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-size: 0.85rem;
+        }
+
+        .anomaly-item:last-child { border-bottom: none; }
+
+        .anomaly-icon {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        .anomaly-icon.warning { background: rgba(245, 158, 11, 0.15); color: var(--alert-orange); }
+        .anomaly-icon.success { background: rgba(16, 185, 129, 0.15); color: var(--bio-emerald); }
+        .anomaly-icon.critical { background: rgba(239, 68, 68, 0.15); color: var(--alert-red); }
+
+        .anomaly-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .anomaly-desc {
+            color: var(--text-main);
+            flex: 1;
+            line-height: 1.4;
+        }
+
+        .anomaly-empty {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        /* ── History (Cycle Chart) ── */
+        .history-chart {
+            padding: 0.5rem 0;
+        }
+
+        .history-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.35rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+
+        .history-label {
+            width: 80px;
+            text-align: right;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .history-bar-bg {
+            flex: 1;
+            height: 14px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .history-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .history-value {
+            width: 70px;
+            color: var(--text-main);
+            flex-shrink: 0;
+            text-align: right;
+        }
+
+        /* ── Loading Spinner ── */
+        .loading-pulse {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--bio-emerald);
+            animation: pulse 1.2s infinite;
+            margin-right: 6px;
+        }
+
+        .panel-placeholder {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        /* ── Tab Navigation ── */
+        .tab-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .tab-btn {
+            padding: 0.4rem 1rem;
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: var(--bio-emerald);
+            color: var(--spore-glow);
+        }
+
+        .tab-btn:hover { border-color: var(--bio-emerald); }
+
+        /* ── Toggle Switch ── */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .toggle-switch {
+            width: 36px;
+            height: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.3s ease;
+            border: none;
+        }
+
+        .toggle-switch.active { background: var(--bio-emerald); }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: var(--text-main);
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-switch.active::after { transform: translateX(16px); }
+
+        /* ── Running overlay ── */
+        .running-banner {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--bio-emerald);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--spore-glow);
+        }
+
+        .running-banner.visible { display: block; }
+
+        /* ── Responsive ── */
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .panel-pipeline { grid-column: span 1; }
+            .panel-agents { grid-column: span 1; }
+            .panel-gates { grid-column: span 1; }
+            .panel-telemetry { grid-column: span 1; }
+            .panel-anomaly { grid-column: span 2; }
+            .panel-history { grid-column: span 2; }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            .panel-pipeline,
+            .panel-agents,
+            .panel-gates,
+            .panel-telemetry,
+            .panel-anomaly,
+            .panel-history { grid-column: span 1; }
+
+            .dashboard-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .telemetry-grid { grid-template-columns: 1fr 1fr; }
+
+            .container { padding: 0 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Neural Particle Canvas — from landing-3, emerald adaptation -->
+    <canvas id="neural-canvas"></canvas>
+
+    <div class="container" x-data="dashboardState()" x-init="init()">
+
+        <!-- Running Banner -->
+        <div class="running-banner" :class="{ 'visible': running }">
+            <span class="loading-pulse"></span> Simulation in progress &mdash; {{ totalCycles || 0 }} / 24 cycles
+        </div>
+
+        <!-- Header -->
+        <header class="dashboard-header">
+            <a href="/" class="logo">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="emerald-grad-dash" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#10b981"/>
+                            <stop offset="100%" stop-color="#fcd34d"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12" stroke="url(#emerald-grad-dash)" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M12 2C12 2 18 6 18 12C18 18 12 22 12 22" stroke="url(#emerald-grad-dash)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="12" cy="12" r="3" fill="#10b981"/>
+                </svg>
+                AETHER CONTROL
+            </a>
+            <div class="header-controls">
+                <div class="status-indicator">
+                    <div class="status-dot" :class="{ 'idle': !running && status !== 'COMPLETED' }"></div>
+                    <span class="mono" x-text="statusText" style="font-size: 0.7rem;">INITIALIZING</span>
+                </div>
+                <button class="btn btn-primary"
+                        hx-post="/api/v1/simulate"
+                        hx-target="#dashboard-grid"
+                        hx-swap="innerHTML"
+                        :disabled="running"
+                        x-on:htmx:after-request="onSimComplete()">
+                    &#9654; Run Simulation
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Grid -->
+        <div id="dashboard-grid" class="dashboard-grid">
+
+            <!-- Panel 1: Pipeline Status -->
+            <div class="glass-card panel-pipeline">
+                <div class="card-title">
+                    Pipeline Status
+                    <span class="badge badge-success" x-show="running">LIVE</span>
+                </div>
+                <template x-if="!status && !running">
+                    <div class="panel-placeholder">Awaiting first run &mdash; press <strong>Run Simulation</strong></div>
+                </template>
+                <template x-if="status || running">
+                    <div>
+                        <div class="pipeline-phase" x-text="currentPhase || 'idle'"></div>
+                        <div class="pipeline-cycle">
+                            <span x-text="cycleCount || '0'"></span><span>/24 cycles</span>
+                        </div>
+                        <div style="margin-top: 1rem;">
+                            <div class="metric-row">
+                                <span class="label">Uptime</span>
+                                <span class="value" x-text="uptimeText">0s</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="label">Anomalies</span>
+                                <span class="value" x-text="anomaliesHandled || 0"></span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="label">Emergencies</span>
+                                <span class="value" x-text="emergencyResponses || 0"></span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="label">Goldilocks</span>
+                                <span class="value" :class="isGoldilocks ? 'badge-success' : 'badge-danger'" x-text="isGoldilocks ? '✅ ZONE OK' : '❌ VIOLATION'" style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;font-weight:600;"></span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Panel 2: Agent Health -->
+            <div class="glass-card panel-agents">
+                <div class="card-title">
+                    Agent Health
+                    <span class="badge badge-success" x-show="allAgentsOk">ALL OK</span>
+                </div>
+                <template x-if="!status && !running">
+                    <div class="panel-placeholder">Awaiting telemetry...</div>
+                </template>
+                <template x-if="status || running">
+                    <div>
+                        <div class="agent-item" x-data="{ agent: getAgentStatus('solara') }">
+                            <div>
+                                <div class="agent-name">
+                                    <div class="agent-dot" :style="'background:' + (agent ? 'var(--bio-emerald)' : 'var(--text-muted)')"></div>
+                                    Solara
+                                </div>
+                                <div class="agent-role">Energy Grid Optimizer</div>
+                            </div>
+                            <div class="agent-metrics">
+                                <div x-text="agent ? '✓ Active' : '...'"></div>
+                                <div x-show="agent && agent.retry_count !== undefined" x-text="'retries: ' + agent.retry_count"></div>
+                            </div>
+                        </div>
+                        <div class="agent-item" x-data="{ agent: getAgentStatus('veridian') }">
+                            <div>
+                                <div class="agent-name">
+                                    <div class="agent-dot" :style="'background:' + (agent ? 'var(--sun-ray)' : 'var(--text-muted)')"></div>
+                                    Veridian
+                                </div>
+                                <div class="agent-role">Bio-Regenerative Supervisor</div>
+                            </div>
+                            <div class="agent-metrics">
+                                <div x-text="agent ? '✓ Active' : '...'"></div>
+                                <div x-show="agent && agent.retry_count !== undefined" x-text="'retries: ' + agent.retry_count"></div>
+                            </div>
+                        </div>
+                        <div class="agent-item" x-data="{ agent: getAgentStatus('hal_90') }">
+                            <div>
+                                <div class="agent-name">
+                                    <div class="agent-dot" :style="'background:' + (agent ? 'var(--spore-glow)' : 'var(--text-muted)')"></div>
+                                    Hal-90
+                                </div>
+                                <div class="agent-role">Habitat Mediator &amp; Command</div>
+                            </div>
+                            <div class="agent-metrics">
+                                <div x-text="agent ? '✓ Active' : '...'"></div>
+                                <div x-show="agent && agent.retry_count !== undefined" x-text="'retries: ' + agent.retry_count"></div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Panel 3: Quality Gates -->
+            <div class="glass-card panel-gates">
+                <div class="card-title">
+                    Quality Gates
+                    <span class="badge badge-success" x-show="allGatesPass">ALL PASS</span>
+                </div>
+                <template x-if="!status && !running">
+                    <div class="panel-placeholder">Awaiting first run...</div>
+                </template>
+                <template x-if="status || running">
+                    <div>
+                        <template x-for="(gateStatus, gateName) in qualityGates" :key="gateName">
+                            <div class="gate-item">
+                                <span class="gate-name" x-text="gateName.replace(/_/g, ' ')"></span>
+                                <span class="gate-status" :class="'gate-' + gateStatus" x-text="gateStatus.toUpperCase()"></span>
+                            </div>
+                        </template>
+                        <template x-if="Object.keys(qualityGates).length === 0">
+                            <div class="panel-placeholder">No gates evaluated yet</div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Panel 4: Environmental Telemetry -->
+            <div class="glass-card panel-telemetry">
+                <div class="card-title">
+                    Environmental Telemetry
+                    <span class="mono" style="color:var(--text-muted);font-size:0.6rem;" x-text="envTime"></span>
+                </div>
+                <template x-if="!env && !running">
+                    <div class="panel-placeholder">Awaiting telemetry data...</div>
+                </template>
+                <template x-if="env || running">
+                    <div class="telemetry-grid">
+                        <div class="telemetry-item" x-data="{ val: env?.battery_level || 0 }">
+                            <div class="telemetry-label">Battery</div>
+                            <div class="telemetry-value" x-text="val.toFixed(1) + '%'"></div>
+                            <div class="telemetry-bar">
+                                <div class="telemetry-bar-fill fill-emerald" :style="'width:' + val + '%'"></div>
+                            </div>
+                            <div class="telemetry-threshold">40% threshold</div>
+                        </div>
+                        <div class="telemetry-item" x-data="{ val: env?.o2_level || 0 }">
+                            <div class="telemetry-label">O2 Level</div>
+                            <div class="telemetry-value" x-text="val.toFixed(1) + '%'"></div>
+                            <div class="telemetry-bar">
+                                <div class="telemetry-bar-fill fill-gold" :style="'width:' + ((val/25)*100) + '%'"></div>
+                            </div>
+                            <div class="telemetry-threshold">19.5% minimum</div>
+                        </div>
+                        <div class="telemetry-item" x-data="{ val: env?.temperature || 0 }">
+                            <div class="telemetry-label">Temperature</div>
+                            <div class="telemetry-value" x-text="val.toFixed(1) + '°C'"></div>
+                            <div class="telemetry-bar">
+                                <div class="telemetry-bar-fill fill-cyan" :style="'width:' + ((val/30)*100) + '%'"></div>
+                            </div>
+                            <div class="telemetry-threshold">18-26°C zone</div>
+                        </div>
+                        <div class="telemetry-item" x-data="{ gen: env?.power_generation || 0, cons: env?.power_consumption || 0 }">
+                            <div class="telemetry-label">Power</div>
+                            <div class="telemetry-value" style="font-size:1.4rem;" x-text="gen.toFixed(0) + 'W / ' + cons.toFixed(0) + 'W'"></div>
+                            <div class="telemetry-bar">
+                                <div class="telemetry-bar-fill fill-violet" :style="'width:' + ((gen/1000)*100) + '%'"></div>
+                            </div>
+                            <div class="telemetry-threshold" x-text="'Solar: ' + (env?.solar_radiation || 0).toFixed(0) + ' W/m²'"></div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Panel 5: Anomaly Feed -->
+            <div class="glass-card panel-anomaly" x-data="{ autoscroll: true }">
+                <div class="card-title">
+                    <span>Anomaly Feed</span>
+                    <div class="toggle-row">
+                        <button class="toggle-switch" :class="{ 'active': autoscroll }" @click="autoscroll = !autoscroll" type="button"></button>
+                        <span>Auto-scroll</span>
+                    </div>
+                </div>
+                <div class="anomaly-feed" x-ref="feed">
+                    <template x-if="(!anomalies || anomalies.length === 0) && !running">
+                        <div class="anomaly-empty">No anomalies detected. System nominal.</div>
+                    </template>
+                    <template x-if="running">
+                        <div class="anomaly-item">
+                            <div class="anomaly-icon warning">⟳</div>
+                            <div class="anomaly-desc">Simulation running &mdash; monitoring for anomalies...</div>
+                        </div>
+                    </template>
+                    <template x-for="(a, i) in anomalies" :key="i">
+                        <div class="anomaly-item">
+                            <div class="anomaly-icon" :class="a.type === 'warning' ? 'warning' : a.type === 'critical' ? 'critical' : 'success'">
+                                <span x-text="a.type === 'warning' ? '!' : a.type === 'critical' ? '!!' : '✓'"></span>
+                            </div>
+                            <span class="anomaly-time" x-text="a.time"></span>
+                            <span class="anomaly-desc" x-text="a.message"></span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cycle History Section -->
+        <div class="glass-card panel-history" style="margin-top: 1.25rem;" x-data="{ tab: 'live' }">
+            <div class="card-title" style="border-bottom: none; padding-bottom: 0; margin-bottom: 0;">
+                <span>Cycle History</span>
+                <div class="tab-bar">
+                    <button class="tab-btn" :class="{ 'active': tab === 'live' }" @click="tab = 'live'" type="button">Live</button>
+                    <button class="tab-btn" :class="{ 'active': tab === 'history' }" @click="tab = 'history'" type="button">History</button>
+                </div>
+            </div>
+
+            <!-- Live Tab -->
+            <div x-show="tab === 'live'">
+                <div class="history-chart">
+                    <div class="history-row">
+                        <span class="history-label">Battery</span>
+                        <div class="history-bar-bg">
+                            <div class="history-bar-fill fill-emerald" :style="'width:' + (env?.battery_level || 0) + '%'"></div>
+                        </div>
+                        <span class="history-value" x-text="(env?.battery_level || 0).toFixed(1) + '%'"></span>
+                    </div>
+                    <div class="history-row">
+                        <span class="history-label">O2</span>
+                        <div class="history-bar-bg">
+                            <div class="history-bar-fill fill-gold" :style="'width:' + ((env?.o2_level || 0) / 25 * 100) + '%'"></div>
+                        </div>
+                        <span class="history-value" x-text="(env?.o2_level || 0).toFixed(1) + '%'"></span>
+                    </div>
+                    <div class="history-row">
+                        <span class="history-label">Temperature</span>
+                        <div class="history-bar-bg">
+                            <div class="history-bar-fill fill-cyan" :style="'width:' + ((env?.temperature || 0) / 30 * 100) + '%'"></div>
+                        </div>
+                        <span class="history-value" x-text="(env?.temperature || 0).toFixed(1) + '°C'"></span>
+                    </div>
+                    <div class="history-row">
+                        <span class="history-label">Generation</span>
+                        <div class="history-bar-bg">
+                            <div class="history-bar-fill fill-violet" :style="'width:' + ((env?.power_generation || 0) / 1000 * 100) + '%'"></div>
+                        </div>
+                        <span class="history-value" x-text="(env?.power_generation || 0).toFixed(0) + 'W'"></span>
+                    </div>
+                    <div class="history-row">
+                        <span class="history-label">Consumption</span>
+                        <div class="history-bar-bg">
+                            <div class="history-bar-fill fill-violet" :style="'width:' + ((env?.power_consumption || 0) / 1000 * 100) + '%'" style="background: var(--text-muted);"></div>
+                        </div>
+                        <span class="history-value" x-text="(env?.power_consumption || 0).toFixed(0) + 'W'"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div x-show="tab === 'history'">
+                <template x-if="!cycleHistory || cycleHistory.length === 0">
+                    <div class="panel-placeholder">Run a simulation to see cycle history</div>
+                </template>
+                <template x-if="cycleHistory && cycleHistory.length > 0">
+                    <div class="history-chart">
+                        <template x-for="(point, i) in cycleHistory.slice(-24)" :key="i">
+                            <div class="history-row" style="gap: 0.5rem;">
+                                <span class="history-label" style="width: 40px; font-size: 0.65rem;" x-text="'C' + point.cycle"></span>
+                                <div class="history-bar-bg" style="height: 8px;">
+                                    <div class="history-bar-fill fill-emerald" :style="'width:' + point.battery + '%'"></div>
+                                </div>
+                                <div class="history-bar-bg" style="height: 8px;">
+                                    <div class="history-bar-fill fill-gold" :style="'width:' + (point.o2 / 25 * 100) + '%'"></div>
+                                </div>
+                                <span class="history-value" style="width: 30px; font-size: 0.65rem;" x-text="point.battery.toFixed(0)"></span>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer style="padding: 2rem 0; border-top: 1px solid var(--glass-border); margin-top: 2rem; display: flex; justify-content: space-between; align-items: center;">
+            <div class="mono" style="color: var(--text-muted); font-size: 0.75rem;">
+                AETHER v1.0.0 — Operational Dashboard
+            </div>
+            <div class="mono" style="color: var(--text-muted); font-size: 0.75rem;">
+                {{ current_year }} &copy; Autonomous Habitat Regulator
+            </div>
+        </footer>
+    </div>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <script>
+        // ── Alpine.js Dashboard State ──
+        function dashboardState() {
+            return {
+                // Raw state from API
+                status: null,
+                env: null,
+                qualityGates: {},
+                agentStatuses: {},
+                anomalies: [],
+                cycleHistory: [],
+
+                // UI state
+                running: false,
+                totalCycles: 0,
+                statusText: 'INITIALIZING',
+                currentPhase: 'idle',
+                cycleCount: 0,
+                uptimeText: '0s',
+                anomaliesHandled: 0,
+                emergencyResponses: 0,
+                isGoldilocks: false,
+                envTime: '',
+                allAgentsOk: true,
+                allGatesPass: true,
+
+                pollInterval: null,
+
+                init() {
+                    this.fetchStatus();
+                    // Poll every 3 seconds
+                    this.pollInterval = setInterval(() => this.fetchStatus(), 3000);
+                },
+
+                async fetchStatus() {
+                    try {
+                        const resp = await fetch('/api/v1/status');
+                        const data = await resp.json();
+
+                        // Check if simulation is running
+                        if (data.simulation_running) {
+                            this.running = true;
+                            this.statusText = 'RUNNING';
+                        } else if (data.status === 'COMPLETED') {
+                            this.running = false;
+                            this.statusText = 'COMPLETED';
+                        } else if (data.status === 'ERROR') {
+                            this.running = false;
+                            this.statusText = 'ERROR';
+                        } else {
+                            this.running = false;
+                            this.statusText = 'IDLE';
+                        }
+
+                        if (data.status && data.status !== 'idle') {
+                            this.status = data;
+                            this.env = data.environmental_summary || {};
+                            this.qualityGates = data.quality_gates || {};
+                            this.agentStatuses = data.agent_status || {};
+                            this.anomaliesHandled = data.anomalies_handled || 0;
+                            this.emergencyResponses = data.emergency_responses || 0;
+                            this.totalCycles = data.total_cycles || 0;
+
+                            const ps = data.pipeline_summary || {};
+                            this.currentPhase = ps.current_phase || 'idle';
+                            this.cycleCount = ps.cycle_count || 0;
+                            const uptime = ps.uptime || 0;
+                            this.uptimeText = uptime < 60 ? uptime.toFixed(1) + 's' : (uptime / 60).toFixed(1) + 'm';
+
+                            const es = this.env;
+                            this.isGoldilocks = es.is_goldilocks_zone || false;
+                            this.envTime = es.time ? new Date(es.time).toLocaleTimeString() : '';
+
+                            // Check agent health
+                            this.allAgentsOk = Object.keys(this.agentStatuses).length >= 3;
+
+                            // Check gates
+                            const gateValues = Object.values(this.qualityGates);
+                            this.allGatesPass = gateValues.length > 0 && gateValues.every(v => v === 'pass');
+                        }
+
+                        // Fetch anomaly feed from history
+                        this.updateAnomalies();
+
+                    } catch (e) {
+                        console.warn('Status fetch failed:', e);
+                    }
+                },
+
+                async updateAnomalies() {
+                    try {
+                        const resp = await fetch('/api/v1/history');
+                        const history = await resp.json();
+                        this.cycleHistory = history;
+
+                        // Extract anomalies from history
+                        const anoms = [];
+                        for (const h of history) {
+                            if (h.active_anomalies > 0) {
+                                anoms.push({
+                                    type: 'warning',
+                                    time: 'C' + h.cycle,
+                                    message: h.active_anomalies + ' active anomaly/anomalies at cycle ' + h.cycle
+                                });
+                            }
+                            if (h.is_goldilocks_zone === false) {
+                                anoms.push({
+                                    type: 'critical',
+                                    time: 'C' + h.cycle,
+                                    message: 'Goldilocks Zone violation at cycle ' + h.cycle
+                                });
+                            }
+                        }
+
+                        // Add emergency responses summary
+                        if (this.emergencyResponses > 0 && !anoms.some(a => a.message.includes('Emergency'))) {
+                            anoms.push({
+                                type: 'success',
+                                time: 'END',
+                                message: this.emergencyResponses + ' emergency response(s) executed across ' + this.totalCycles + ' cycles'
+                            });
+                        }
+
+                        if (this.totalCycles > 0 && anoms.length === 0) {
+                            anoms.push({
+                                type: 'success',
+                                time: 'END',
+                                message: 'All ' + this.totalCycles + ' cycles completed — no anomalies detected'
+                            });
+                        }
+
+                        this.anomalies = anoms;
+
+                    } catch (e) {
+                        // No history yet
+                    }
+                },
+
+                getAgentStatus(name) {
+                    return this.agentStatuses[name] || null;
+                },
+
+                onSimComplete() {
+                    // HTMX completed — re-fetch full status
+                    setTimeout(() => this.fetchStatus(), 500);
+                },
+
+                destroy() {
+                    if (this.pollInterval) clearInterval(this.pollInterval);
+                }
+            };
+        }
+    </script>
+
+    <script>
+        // ── Neural Particle Network ── from landing-3, emerald adaptation
+        // Bouncing particles with neural connection lines
+        const canvas = document.getElementById('neural-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height, particles;
+
+        function initCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            particles = [];
+
+            const particleCount = Math.floor((width * height) / 12000);
+
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    radius: Math.random() * 1.5 + 0.5,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4
+                });
+            }
+        }
+
+        function animateCanvas() {
+            requestAnimationFrame(animateCanvas);
+            ctx.clearRect(0, 0, width, height);
+
+            particles.forEach((p, index) => {
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Bounce off edges
+                if (p.x < 0 || p.x > width) p.vx *= -1;
+                if (p.y < 0 || p.y > height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#10b981';
+                ctx.fill();
+
+                // Neural connecting lines — emerald at rgba(16, 185, 129, 0.12) when < 150px
+                for (let j = index + 1; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dx = p.x - p2.x;
+                    const dy = p.y - p2.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 150) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(16, 185, 129, ${0.12 - dist / 1250})`;
+                        ctx.lineWidth = 0.4;
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            });
+        }
+
+        window.addEventListener('resize', initCanvas);
+        initCanvas();
+        animateCanvas();
+    </script>
+</body>
+</html>
