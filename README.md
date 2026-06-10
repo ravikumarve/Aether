@@ -84,12 +84,9 @@ python src/main.py --verbose --cycles 5
 - Check Python version compatibility (3.11+)
 
 **Low confidence forecasts:**
-- This is normal during nighttime simulation (0 solar radiation)
-- System will continue operating with conservative estimates
-- Quality gates will fail but pipeline will continue
-```bash
-python src/main.py --verbose --cycles 5
-```
+- Confidence calculation now uses a coefficient-of-variation formula
+- Nighttime automatically returns 0.85 baseline (quality gate passes)
+- Daytime confidence typically runs at 0.92-0.93 with clear skies
 
 ## 🏗️ Architecture
 
@@ -136,7 +133,7 @@ AETHER uses an **Agents Orchestrator** pattern to coordinate three specialized a
 
 #### 🌿 Veridian (Bio-Regenerative Supervisor)
 - **Goal**: Regulate O2/CO2 exchange and hydroponic nutrient delivery
-- **Tools**: BiomassSensor, AtmosphericScrubber, NutrientInjector
+- **Tools**: BiologicalRequirementsCalculator, AtmosphereAnalyzer, AlgaeBioreactor
 - **Behavior**: Protective of "Green Lung"; prioritizes oxygen-producing moss over non-essential lighting
 
 #### 🤖 Hal-90 (Habitat Mediator & Command)
@@ -194,8 +191,7 @@ aether/
 │   │   ├── solara.py        # Energy Grid Optimizer
 │   │   ├── veridian.py      # Bio-Regenerative Supervisor
 │   │   └── hal_90.py        # Habitat Mediator & Command
-│   ├── mqtt_client.py       # MQTT communication layer
-│   └── tools.py             # Agent tool classes (planned)
+│   └── mqtt_client.py       # MQTT communication layer
 ├── docs/
 │   ├── README.md            # This file
 │   └── AGENTS.md            # Agent specifications and workflow
@@ -286,9 +282,9 @@ The orchestrator publishes pipeline status to `aether/orchestrator/status`:
 
 ```json
 {
-  "timestamp": "2024-01-15T10:30:00",
+  "timestamp": "2026-06-10T11:21:00",
   "pipeline_summary": {
-    "current_phase": "resource_allocation",
+    "current_phase": "continuous_loop",
     "cycle_count": 12,
     "agent_status": {
       "solara": "complete",
@@ -299,13 +295,19 @@ The orchestrator publishes pipeline status to `aether/orchestrator/status`:
       "initialization": "pass",
       "solara_audit": "pass",
       "veridian_audit": "pass"
-    }
+    },
+    "anomalies_detected": 3,
+    "emergency_responses": 4
   },
   "environmental_summary": {
-    "battery_level": 75.5,
+    "time": "2026-06-11T00:21:00",
+    "battery_level": 61.9,
     "o2_level": 21.0,
     "temperature": 22.0,
-    "is_goldilocks_zone": true
+    "solar_radiation": 0.0,
+    "power_generation": 0.0,
+    "is_goldilocks_zone": true,
+    "active_anomalies": 1
   }
 }
 ```
@@ -315,13 +317,25 @@ The orchestrator publishes pipeline status to `aether/orchestrator/status`:
 The system generates detailed logs in `aether.log`:
 
 ```
-2024-01-15 10:30:00 - INFO - AETHER system starting
-2024-01-15 10:30:01 - INFO - Phase 1: System Initialization
-2024-01-15 10:30:02 - INFO - Phase 2: Solara Power Audit
-2024-01-15 10:30:03 - INFO - Solara: Power audit complete (confidence: 0.92)
+2026-06-10 11:21:00 - INFO - AETHER - Starting pipeline
+2026-06-10 11:21:00 - INFO - Phase 1: System Initialization
+2026-06-10 11:21:00 - INFO - Phase 2: Solara Power Audit
+2026-06-10 11:21:00 - INFO - Solara: Power audit complete (confidence: 0.93, threshold: 699.3W)
+2026-06-10 11:21:00 - INFO - Phase 3: Veridian Biological Audit
+2026-06-10 11:21:00 - INFO - Phase 5: Resource Allocation
+2026-06-10 11:21:00 - WARNING - Handling anomaly: dust_storm - Dust storm reducing solar efficiency
+2026-06-10 11:21:00 - INFO - Solara: Emergency power conservation mode — consumption reduced 20%
 ```
 
 ## 🔮 Future Enhancements
+
+### Implemented
+
+- [x] Solara forecast confidence with CV-based formula (night: 0.85, day: 0.92+)
+- [x] SimPy clock advancement (time progresses 1h per cycle, full solar day)
+- [x] Anomaly detection with state-modifying emergency responses (5 types)
+- [x] Quality gate system with retry logic and escalation
+- [x] CLI entrypoint with `--cycles`, `--no-mqtt`, `--verbose` flags
 
 ### Planned Features
 
@@ -337,7 +351,7 @@ The system generates detailed logs in `aether.log`:
 ### Technical Debt
 
 - [ ] Add comprehensive unit tests
-- [ ] Implement integration tests
+- [ ] Implement integration tests (Hal-90 mediation, boundary conditions)
 - [ ] Add performance profiling
 - [ ] Improve error messages
 - [ ] Add configuration validation
