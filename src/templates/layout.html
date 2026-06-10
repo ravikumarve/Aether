@@ -578,6 +578,86 @@
             margin-top: 0.25rem;
         }
 
+        /* Sparkline mini-chart layout */
+        .sparkline-item {
+            padding: 0.8rem;
+        }
+        .sparkline-item .telemetry-label {
+            margin-bottom: 0.2rem;
+        }
+        .sparkline-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .sparkline-current {
+            font-size: 1.4rem;
+            font-weight: 300;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-main);
+            white-space: nowrap;
+            min-width: 75px;
+        }
+        .sparkline-svg {
+            flex: 1;
+            min-width: 0;
+        }
+        .sparkline-svg svg {
+            width: 100%;
+            height: auto;
+        }
+
+        /* Sparkline mini-charts (Live tab) */
+        .sparkline-chart {
+            background: rgba(0,0,0,0.15);
+            border-radius: 8px;
+            padding: 0.6rem 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+        .sparkline-chart-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 0.3rem;
+        }
+        .sparkline-chart svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* History compact rows (History tab) */
+        .history-compact {
+            background: rgba(0,0,0,0.15);
+            border-radius: 8px;
+            padding: 0.5rem 0.8rem;
+            max-height: 200px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--glass-border) transparent;
+        }
+        .history-compact-header {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+            padding-bottom: 0.3rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 0.3rem;
+        }
+        .history-compact-header span { flex: 1; text-align: center; }
+        .history-compact-row {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+            padding: 0.15rem 0;
+        }
+        .history-compact-row:hover {
+            background: rgba(255,255,255,0.03);
+            border-radius: 4px;
+        }
+
         .anomaly-feed {
             max-height: 200px;
             overflow-y: auto;

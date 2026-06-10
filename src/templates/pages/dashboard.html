@@ -149,35 +149,35 @@
             </template>
             <template x-if="env || running">
                 <div class="telemetry-grid">
-                    <div class="telemetry-item" x-data="{ val: env?.battery_level || 0 }">
+                    <div class="telemetry-item sparkline-item">
                         <div class="telemetry-label">Battery</div>
-                        <div class="telemetry-value" x-text="val.toFixed(1) + '%'"></div>
-                        <div class="telemetry-bar">
-                            <div class="telemetry-bar-fill fill-emerald" :style="'width:' + val + '%'"></div>
+                        <div class="sparkline-row">
+                            <div class="sparkline-current" x-text="(env?.battery_level || 0).toFixed(1) + '%'"></div>
+                            <div class="sparkline-svg" x-html="sparklineSVG(getCycleValues('battery'), 120, 32, '#10b981', 40)"></div>
                         </div>
-                        <div class="telemetry-threshold">40% threshold</div>
+                        <div class="telemetry-threshold">40% min</div>
                     </div>
-                    <div class="telemetry-item" x-data="{ val: env?.o2_level || 0 }">
+                    <div class="telemetry-item sparkline-item">
                         <div class="telemetry-label">O2 Level</div>
-                        <div class="telemetry-value" x-text="val.toFixed(1) + '%'"></div>
-                        <div class="telemetry-bar">
-                            <div class="telemetry-bar-fill fill-gold" :style="'width:' + ((val/25)*100) + '%'"></div>
+                        <div class="sparkline-row">
+                            <div class="sparkline-current" x-text="(env?.o2_level || 0).toFixed(1) + '%'"></div>
+                            <div class="sparkline-svg" x-html="sparklineSVG(getCycleValues('o2'), 120, 32, '#fcd34d', 19.5)"></div>
                         </div>
-                        <div class="telemetry-threshold">19.5% minimum</div>
+                        <div class="telemetry-threshold">19.5% min</div>
                     </div>
-                    <div class="telemetry-item" x-data="{ val: env?.temperature || 0 }">
+                    <div class="telemetry-item sparkline-item">
                         <div class="telemetry-label">Temperature</div>
-                        <div class="telemetry-value" x-text="val.toFixed(1) + '°C'"></div>
-                        <div class="telemetry-bar">
-                            <div class="telemetry-bar-fill fill-cyan" :style="'width:' + ((val/30)*100) + '%'"></div>
+                        <div class="sparkline-row">
+                            <div class="sparkline-current" x-text="(env?.temperature || 0).toFixed(1) + '°C'"></div>
+                            <div class="sparkline-svg" x-html="sparklineSVG(getCycleValues('temperature'), 120, 32, '#22d3ee', 0)"></div>
                         </div>
                         <div class="telemetry-threshold">18-26°C zone</div>
                     </div>
-                    <div class="telemetry-item" x-data="{ gen: env?.power_generation || 0, cons: env?.power_consumption || 0 }">
+                    <div class="telemetry-item sparkline-item">
                         <div class="telemetry-label">Power</div>
-                        <div class="telemetry-value" style="font-size:1.4rem;" x-text="gen.toFixed(0) + 'W / ' + cons.toFixed(0) + 'W'"></div>
-                        <div class="telemetry-bar">
-                            <div class="telemetry-bar-fill fill-violet" :style="'width:' + ((gen/1000)*100) + '%'"></div>
+                        <div class="sparkline-row">
+                            <div class="sparkline-current" style="font-size:0.8rem;" x-text="(env?.power_generation || 0).toFixed(0) + 'W gen / ' + (env?.power_consumption || 0).toFixed(0) + 'W con'"></div>
+                            <div class="sparkline-svg" x-html="sparklineSVG(getCycleValues('power_generation'), 120, 32, '#a78bfa')"></div>
                         </div>
                         <div class="telemetry-threshold" x-text="'Solar: ' + (env?.solar_radiation || 0).toFixed(0) + ' W/m²'"></div>
                     </div>
@@ -227,66 +227,67 @@
             </div>
         </div>
 
-        <!-- Live Tab -->
+        <!-- Live Tab: SVG Mini-Charts -->
         <div x-show="tab === 'live'">
             <div class="history-chart">
-                <div class="history-row">
-                    <span class="history-label">Battery</span>
-                    <div class="history-bar-bg">
-                        <div class="history-bar-fill fill-emerald" :style="'width:' + (env?.battery_level || 0) + '%'"></div>
-                    </div>
-                    <span class="history-value" x-text="(env?.battery_level || 0).toFixed(1) + '%'"></span>
+                <div class="sparkline-chart">
+                    <div class="sparkline-chart-label">Battery <span class="mono" style="color:var(--bio-emerald);" x-text="'(' + (env?.battery_level || 0).toFixed(1) + '%)'"></span></div>
+                    <div x-html="sparklineSVG(getCycleValues('battery'), 300, 50, '#10b981', 40)"></div>
                 </div>
-                <div class="history-row">
-                    <span class="history-label">O2</span>
-                    <div class="history-bar-bg">
-                        <div class="history-bar-fill fill-gold" :style="'width:' + ((env?.o2_level || 0) / 25 * 100) + '%'"></div>
-                    </div>
-                    <span class="history-value" x-text="(env?.o2_level || 0).toFixed(1) + '%'"></span>
+                <div class="sparkline-chart">
+                    <div class="sparkline-chart-label">O2 Level <span class="mono" style="color:var(--sun-ray);" x-text="'(' + (env?.o2_level || 0).toFixed(1) + '%)'"></span></div>
+                    <div x-html="sparklineSVG(getCycleValues('o2'), 300, 50, '#fcd34d', 19.5)"></div>
                 </div>
-                <div class="history-row">
-                    <span class="history-label">Temperature</span>
-                    <div class="history-bar-bg">
-                        <div class="history-bar-fill fill-cyan" :style="'width:' + ((env?.temperature || 0) / 30 * 100) + '%'"></div>
-                    </div>
-                    <span class="history-value" x-text="(env?.temperature || 0).toFixed(1) + '°C'"></span>
+                <div class="sparkline-chart">
+                    <div class="sparkline-chart-label">Temperature <span class="mono" style="color:var(--cyber-teal);" x-text="'(' + (env?.temperature || 0).toFixed(1) + '°C)'"></span></div>
+                    <div x-html="sparklineSVG(getCycleValues('temperature'), 300, 50, '#22d3ee')"></div>
                 </div>
-                <div class="history-row">
-                    <span class="history-label">Generation</span>
-                    <div class="history-bar-bg">
-                        <div class="history-bar-fill fill-violet" :style="'width:' + ((env?.power_generation || 0) / 1000 * 100) + '%'"></div>
-                    </div>
-                    <span class="history-value" x-text="(env?.power_generation || 0).toFixed(0) + 'W'"></span>
+                <div class="sparkline-chart">
+                    <div class="sparkline-chart-label">Power Gen <span class="mono" style="color:var(--text-muted);" x-text="'(' + (env?.power_generation || 0).toFixed(0) + 'W)'"></span></div>
+                    <div x-html="sparklineSVG(getCycleValues('power_generation'), 300, 50, '#a78bfa')"></div>
                 </div>
-                <div class="history-row">
-                    <span class="history-label">Consumption</span>
-                    <div class="history-bar-bg">
-                        <div class="history-bar-fill" :style="'width:' + ((env?.power_consumption || 0) / 1000 * 100) + '%;background:var(--text-muted)'"></div>
-                    </div>
-                    <span class="history-value" x-text="(env?.power_consumption || 0).toFixed(0) + 'W'"></span>
+                <div class="sparkline-chart">
+                    <div class="sparkline-chart-label">Power Cons <span class="mono" style="color:var(--text-muted);" x-text="'(' + (env?.power_consumption || 0).toFixed(0) + 'W)'"></span></div>
+                    <div x-html="sparklineSVG(getCycleValues('power_consumption'), 300, 50, '#9ca3af')"></div>
                 </div>
             </div>
         </div>
 
-        <!-- History Tab -->
+        <!-- History Tab: Per-Cycle Sparklines -->
         <div x-show="tab === 'history'">
             <template x-if="!cycleHistory || cycleHistory.length === 0">
                 <div class="panel-placeholder">Run a simulation to see cycle history</div>
             </template>
             <template x-if="cycleHistory && cycleHistory.length > 0">
-                <div class="history-chart">
-                    <template x-for="(point, i) in cycleHistory.slice(-24)" :key="i">
-                        <div class="history-row" style="gap: 0.5rem;">
-                            <span class="history-label" style="width: 40px; font-size: 0.65rem;" x-text="'C' + point.cycle"></span>
-                            <div class="history-bar-bg" style="height: 8px;">
-                                <div class="history-bar-fill fill-emerald" :style="'width:' + point.battery + '%'"></div>
-                            </div>
-                            <div class="history-bar-bg" style="height: 8px;">
-                                <div class="history-bar-fill fill-gold" :style="'width:' + (point.o2 / 25 * 100) + '%'"></div>
-                            </div>
-                            <span class="history-value" style="width: 30px; font-size: 0.65rem;" x-text="point.battery.toFixed(0)"></span>
+                <div>
+                    <div class="history-compact">
+                        <div class="history-compact-header">
+                            <span class="mono" style="color:var(--bio-emerald);font-size:0.65rem;">Battery</span>
+                            <span class="mono" style="color:var(--sun-ray);font-size:0.65rem;">O2</span>
+                            <span class="mono" style="color:var(--text-muted);font-size:0.65rem;">Cycle</span>
                         </div>
-                    </template>
+                        <template x-for="(point, i) in cycleHistory.slice(-24)" :key="i">
+                            <div class="history-compact-row">
+                                <div class="history-bar-bg" style="height:6px;flex:1;">
+                                    <div class="history-bar-fill fill-emerald" :style="'width:' + point.battery + '%'"></div>
+                                </div>
+                                <div class="history-bar-bg" style="height:6px;flex:1;">
+                                    <div class="history-bar-fill fill-gold" :style="'width:' + (point.o2 / 25 * 100) + '%'"></div>
+                                </div>
+                                <span class="mono" style="width:32px;font-size:0.6rem;color:var(--text-muted);text-align:right;" x-text="'C' + point.cycle"></span>
+                            </div>
+                        </template>
+                    </div>
+                    <div style="margin-top:1rem;display:flex;gap:1rem;flex-wrap:wrap;">
+                        <div class="sparkline-chart" style="flex:1;min-width:200px;">
+                            <div class="sparkline-chart-label">Battery Trend</div>
+                            <div x-html="sparklineSVG(getCycleValues('battery'), 200, 40, '#10b981', 40)"></div>
+                        </div>
+                        <div class="sparkline-chart" style="flex:1;min-width:200px;">
+                            <div class="sparkline-chart-label">O2 Trend</div>
+                            <div x-html="sparklineSVG(getCycleValues('o2'), 200, 40, '#fcd34d', 19.5)"></div>
+                        </div>
+                    </div>
                 </div>
             </template>
         </div>
@@ -453,6 +454,61 @@ function dashboardState() {
 
         getAgentStatus(name) {
             return this.agentStatuses[name] || null;
+        },
+
+        // ── SVG Sparkline Helpers ──
+
+        /** Extract numeric values for a key from cycleHistory */
+        getCycleValues(key) {
+            return this.cycleHistory.map(p => Number(p[key]) || 0);
+        },
+
+        /** Build SVG polyline points string for a set of values */
+        sparklinePoints(values, width, height) {
+            const n = values.length;
+            if (n === 0) return '';
+            const max = Math.max(...values, 0.001);
+            const min = Math.min(...values, 0);
+            const range = max - min || 1;
+            return values.map((v, i) => {
+                const x = (i / (n - 1 || 1)) * width;
+                const y = height - ((v - min) / range) * (height * 0.85) - (height * 0.05);
+                return `${x.toFixed(1)},${y.toFixed(1)}`;
+            }).join(' ');
+        },
+
+        /** Render a full SVG sparkline with optional threshold line */
+        sparklineSVG(values, width, height, color, threshold) {
+            const n = values.length;
+            if (n === 0) {
+                return `<svg width="${width}" height="${height}" style="display:block;"></svg>`;
+            }
+            const points = this.sparklinePoints(values, width, height);
+            const range = (Math.max(...values, 0.001) - Math.min(...values, 0)) || 1;
+            const minVal = Math.min(...values, 0);
+
+            // Build area fill (polygon: bottom-left → along line → bottom-right)
+            const areaPoints = `0,${height} ${points} ${width},${height}`;
+
+            let thresholdLine = '';
+            if (threshold !== undefined && threshold > 0) {
+                const threshY = height - ((threshold - minVal) / range) * (height * 0.85) - (height * 0.05);
+                const clampedY = Math.max(0, Math.min(height, threshY));
+                thresholdLine = `<line x1="0" y1="${clampedY.toFixed(1)}" x2="${width}" y2="${clampedY.toFixed(1)}" stroke="rgba(239,68,68,0.5)" stroke-width="1" stroke-dasharray="3,2"/>`;
+            }
+
+            return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="display:block;" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="g_${color.replace(/[^a-z0-9]/g,'')}" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="${color}" stop-opacity="0.25"/>
+                        <stop offset="100%" stop-color="${color}" stop-opacity="0.02"/>
+                    </linearGradient>
+                </defs>
+                ${thresholdLine}
+                <polygon points="${areaPoints}" fill="url(#g_${color.replace(/[^a-z0-9]/g,'')})"/>
+                <polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="${points.split(' ').pop().split(',')[0]}" cy="${points.split(' ').pop().split(',')[1]}" r="2.5" fill="${color}"/>
+            </svg>`;
         },
 
         onSimComplete() {
