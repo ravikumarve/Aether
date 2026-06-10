@@ -3,6 +3,7 @@ AETHER Agent: Solara
 Energy Grid Optimizer - Maintains battery >40% while maximizing solar intake.
 """
 
+import os
 import logging
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
@@ -242,12 +243,15 @@ class SolaraAgent:
         self.retry_count = 0
         self.max_retries = 3
         
+        # Configuration (from env with fallbacks)
+        self.forecast_horizon = int(os.getenv('SOLARA_FORECAST_HORIZON', '24'))
+        
         logger.info(f"Solara agent initialized")
     
     def perform_power_audit(self, battery_level: float, 
                           power_generation: float,
                           power_consumption: float,
-                          forecast_horizon: int = 24) -> PowerForecast:
+                          forecast_horizon: Optional[int] = None) -> PowerForecast:
         """
         Perform comprehensive power audit and forecast.
         
@@ -263,6 +267,10 @@ class SolaraAgent:
         logger.info(f"Solara: Performing power audit (battery: {battery_level}%, generation: {power_generation}W)")
         
         try:
+            # Use configured horizon if not explicitly provided
+            if forecast_horizon is None:
+                forecast_horizon = self.forecast_horizon
+            
             # Step 1: Analyze current grid status
             grid_status = self.grid_analyzer.analyze_current_status(
                 battery_level, power_generation, power_consumption
