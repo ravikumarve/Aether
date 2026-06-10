@@ -117,6 +117,11 @@ ENV_MAP: Dict[str, str] = {
     'forecast_horizon': 'SOLARA_FORECAST_HORIZON',
     'o2_target': 'VERIDIAN_O2_TARGET',
     'battery_threshold': 'HAL_90_BATTERY_THRESHOLD',
+    'array_efficiency': 'SOLAR_ARRAY_EFFICIENCY',
+    'battery_capacity': 'BATTERY_CAPACITY',
+    'solara_retries': 'SOLARA_MAX_RETRIES',
+    'veridian_retries': 'VERIDIAN_MAX_RETRIES',
+    'hal90_retries': 'HAL_90_MAX_RETRIES',
 }
 
 
@@ -153,6 +158,10 @@ def _run_simulation(max_cycles: int = 24,
 
         sim_engine = SimPyEnvironment()
 
+        # Apply configurable simulation parameters (array efficiency, battery capacity)
+        sim_engine.array_efficiency = float(merged.get('array_efficiency', 8))
+        sim_engine.battery_capacity = float(merged.get('battery_capacity', 10000))
+
         # Apply initial conditions from config (override hardcoded defaults)
         sim_engine.state.battery_level = float(merged.get('initial_battery', 50.0))
         sim_engine.state.o2_level = float(merged.get('initial_o2', 19.8))
@@ -163,6 +172,15 @@ def _run_simulation(max_cycles: int = 24,
         sim_engine.state.occupant_count = int(merged.get('occupant_count', 4))
 
         orchestrator = AgentsOrchestrator(sim_engine, None)
+
+        # Apply Hal-90 priority weights from dashboard config
+        hal90_weights = {
+            'safety': float(merged.get('hal90_priority_safety', 1.0)),
+            'battery': float(merged.get('hal90_priority_battery', 0.9)),
+            'o2': float(merged.get('hal90_priority_o2', 0.85)),
+            'comfort': float(merged.get('hal90_priority_comfort', 0.5)),
+        }
+        orchestrator.hal_90.set_priority_weights(hal90_weights)
 
         # Phase 1: Initialization
         orchestrator._phase_1_initialization()
