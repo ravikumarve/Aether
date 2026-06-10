@@ -881,7 +881,11 @@
 
         <!-- Main Content -->
         <main id="main-content">
-            {% include "pages/dashboard.html" %}
+            {% if initial_page and initial_page != "dashboard" %}
+                {% include "pages/" + initial_page + ".html" ignore missing %}
+            {% else %}
+                {% include "pages/dashboard.html" %}
+            {% endif %}
         </main>
     </div>
 

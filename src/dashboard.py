@@ -340,54 +340,59 @@ async def shell_page(request: Request):
     })
 
 
+def _is_htmx(request: Request) -> bool:
+    """Check if the request is an HTMX fragment request."""
+    return request.headers.get("hx-request") == "true"
+
+
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard_page(request: Request):
-    """Serve the dashboard content fragment."""
-    return templates.TemplateResponse("pages/dashboard.html", {
-        "request": request,
-        "current_year": datetime.now().year
-    })
+    """Serve the dashboard content fragment (or full page for direct access)."""
+    ctx = {"request": request, "current_year": datetime.now().year}
+    if _is_htmx(request):
+        return templates.TemplateResponse("pages/dashboard.html", ctx)
+    ctx["initial_page"] = "dashboard"
+    return templates.TemplateResponse("layout.html", ctx)
 
 
 @app.get("/settings", response_class=HTMLResponse)
 async def settings_page(request: Request):
-    """Serve the settings page fragment."""
-    return templates.TemplateResponse("pages/settings.html", {
-        "request": request,
-        "config": current_config,
-        "current_year": datetime.now().year
-    })
+    """Serve the settings page fragment (or full page for direct access)."""
+    ctx = {"request": request, "config": current_config, "current_year": datetime.now().year}
+    if _is_htmx(request):
+        return templates.TemplateResponse("pages/settings.html", ctx)
+    ctx["initial_page"] = "settings"
+    return templates.TemplateResponse("layout.html", ctx)
 
 
 @app.get("/scenarios", response_class=HTMLResponse)
 async def scenarios_page(request: Request):
-    """Serve the scenarios page fragment."""
-    return templates.TemplateResponse("pages/scenarios.html", {
-        "request": request,
-        "config": current_config,
-        "current_year": datetime.now().year
-    })
+    """Serve the scenarios page fragment (or full page for direct access)."""
+    ctx = {"request": request, "config": current_config, "current_year": datetime.now().year}
+    if _is_htmx(request):
+        return templates.TemplateResponse("pages/scenarios.html", ctx)
+    ctx["initial_page"] = "scenarios"
+    return templates.TemplateResponse("layout.html", ctx)
 
 
 @app.get("/agents", response_class=HTMLResponse)
 async def agents_page(request: Request):
-    """Serve the agents console page fragment."""
-    return templates.TemplateResponse("pages/agents.html", {
-        "request": request,
-        "config": current_config,
-        "completion_report": completion_report,
-        "current_year": datetime.now().year
-    })
+    """Serve the agents console page fragment (or full page for direct access)."""
+    ctx = {"request": request, "config": current_config, "completion_report": completion_report, "current_year": datetime.now().year}
+    if _is_htmx(request):
+        return templates.TemplateResponse("pages/agents.html", ctx)
+    ctx["initial_page"] = "agents"
+    return templates.TemplateResponse("layout.html", ctx)
 
 
 @app.get("/history", response_class=HTMLResponse)
 async def history_page(request: Request):
-    """Serve the history browser page fragment."""
-    return templates.TemplateResponse("pages/history.html", {
-        "request": request,
-        "history": simulation_history,
-        "current_year": datetime.now().year
-    })
+    """Serve the history browser page fragment (or full page for direct access)."""
+    ctx = {"request": request, "history": simulation_history, "current_year": datetime.now().year}
+    if _is_htmx(request):
+        return templates.TemplateResponse("pages/history.html", ctx)
+    ctx["initial_page"] = "history"
+    return templates.TemplateResponse("layout.html", ctx)
 
 
 # ══════════════════════════════════════════════════════════════════
