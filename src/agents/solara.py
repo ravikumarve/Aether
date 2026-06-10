@@ -135,18 +135,29 @@ class WeatherForecaster:
         Returns:
             Confidence score (0.0 to 1.0)
         """
-        # Simplified confidence calculation based on forecast stability
         if len(forecast) < 2:
             return 0.5
         
-        # Calculate variance
-        variance = np.var(forecast)
+        forecast_arr = np.array(forecast)
         
-        # Lower variance = higher confidence
-        max_variance = 100000  # Arbitrary maximum
-        confidence = 1.0 - min(1.0, variance / max_variance)
+        # Nighttime detection: if current + next 5 hours are all near-zero,
+        # return baseline confidence (solar is predictably zero at night)
+        if np.all(forecast_arr[:6] < 1.0):
+            return 0.85
         
-        return confidence
+        # Daytime: use coefficient of variation on significant (>10 W/m²) values.
+        # This measures forecast stability relative to signal strength.
+        # A deterministic sinusoidal forecast has cv ~0.5 → confidence ~0.92.
+        # Random weather noise (factor 0.7-1.0) adds only ±15% variation.
+        significant = forecast_arr[forecast_arr > 10.0]
+        if len(significant) > 1:
+            mean_val = np.mean(significant)
+            std_val = np.std(significant)
+            cv = std_val / mean_val if mean_val > 0 else 1.0
+            confidence = max(0.70, 1.0 - cv * 0.15)
+            return confidence
+        
+        return 0.85
 
 
 class ArrayInclinometer:

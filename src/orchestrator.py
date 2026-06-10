@@ -171,6 +171,9 @@ class AgentsOrchestrator:
             
             # Main simulation loop
             while self.pipeline_state.cycle_count < max_cycles and self.sim_engine.is_running():
+                # Advance SimPy simulation by 1 time unit (1 hour)
+                self.sim_engine.env.run(until=self.sim_engine.env.now + 1)
+                
                 # Phase 2: Solara Audit
                 solara_result = self._phase_2_solara_audit()
                 
@@ -414,21 +417,37 @@ class AgentsOrchestrator:
         self.pipeline_state.pass_quality_gate('continuous_loop')
     
     def _handle_anomaly(self, anomaly: AnomalyEvent) -> None:
-        """Handle an anomaly event."""
+        """Handle an anomaly event with state-modifying emergency response."""
         logger.warning(f"Handling anomaly: {anomaly.anomaly_type.value} - {anomaly.description}")
         
         self.pipeline_state.emergency_responses += 1
         
-        # Spawn appropriate response agent based on anomaly type
+        # Apply emergency response based on anomaly type
+        # (SimPy's _apply_anomaly_effects already applied the initial damage;
+        #  this handler applies the agent's mitigation response)
         if anomaly.anomaly_type.value == 'dust_storm':
-            # Solara handles power conservation
-            logger.info("Solara: Emergency power conservation mode")
+            # Solara: Emergency power conservation — reduce consumption by 20%
+            self.sim_engine.state.power_consumption *= 0.8
+            logger.info("Solara: Emergency power conservation mode — consumption reduced 20%")
         elif anomaly.anomaly_type.value == 'pressure_leak':
-            # Hal-90 handles safety override
-            logger.info("Hal-90: Emergency safety override")
+            # Hal-90: Safety override — boost life support, stabilize O2
+            self.sim_engine.state.power_consumption += 100.0  # Extra power for pressurization
+            self.sim_engine.state.o2_level = max(self.sim_engine.state.o2_level, 19.5)  # Floor O2
+            logger.info("Hal-90: Emergency safety override — life support stabilized")
         elif anomaly.anomaly_type.value == 'o2_drop':
-            # Veridian handles emergency O2 boost
-            logger.info("Veridian: Emergency O2 boost mode")
+            # Veridian: Emergency O2 boost — inject oxygen
+            self.sim_engine.state.o2_level += anomaly.severity * 1.5
+            self.sim_engine.state.power_consumption += 50.0  # Extra power for O2 generation
+            logger.info("Veridian: Emergency O2 boost mode — oxygen injection initiated")
+        elif anomaly.anomaly_type.value == 'temperature_spike':
+            # Thermal control: Emergency cooling
+            self.sim_engine.state.temperature -= anomaly.severity * 5.0
+            self.sim_engine.state.power_consumption += 80.0  # Extra power for cooling
+            logger.info("Thermal control: Emergency cooling activated")
+        elif anomaly.anomaly_type.value == 'solar_flare':
+            # Solara: Shed non-critical load
+            self.sim_engine.state.power_consumption *= 0.7  # Reduce non-essential consumption
+            logger.info("Solara: Solar flare response — non-critical loads shed 30%")
     
     def _publish_status(self) -> None:
         """Publish orchestrator status via MQTT."""
