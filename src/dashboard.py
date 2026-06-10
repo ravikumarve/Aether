@@ -8,14 +8,25 @@ import logging
 import sys
 import json
 import os
-from datetime import datetime
+from datetime import datetime, date
 from typing import Dict, List, Optional
 from pathlib import Path
+from enum import Enum
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    """Custom JSON encoder that handles datetime/date/enum objects."""
+    def default(self, obj):
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        if isinstance(obj, Enum):
+            return obj.value
+        return super().default(obj)
 
 # Load env
 load_dotenv()
@@ -47,6 +58,9 @@ app = FastAPI(
 )
 
 templates = Jinja2Templates(directory=str(templates_dir))
+
+# Make FastAPI use our custom JSON encoder globally
+from starlette.responses import Response
 
 
 # ── Simulation Runner ────────────────────────────────────────────
@@ -223,7 +237,10 @@ async def api_status():
     GET /api/v1/status
     Returns merged pipeline state + environmental summary.
     """
-    return JSONResponse(content=_get_status_payload())
+    return Response(
+        content=json.dumps(_get_status_payload(), cls=DateTimeEncoder),
+        media_type="application/json"
+    )
 
 
 @app.post("/api/v1/simulate")
@@ -235,9 +252,10 @@ async def api_simulate():
     global completion_report, cycle_telemetry
 
     if simulation_running:
-        return JSONResponse(
-            content={'status': 'error', 'message': 'Simulation already running'},
-            status_code=409
+        return Response(
+            content=json.dumps({'status': 'error', 'message': 'Simulation already running'}, cls=DateTimeEncoder),
+            status_code=409,
+            media_type="application/json"
         )
 
     report, telemetry = _run_simulation(max_cycles=24)
@@ -246,7 +264,10 @@ async def api_simulate():
     completion_report = report
     cycle_telemetry = telemetry
 
-    return JSONResponse(content=_get_status_payload())
+    return Response(
+        content=json.dumps(_get_status_payload(), cls=DateTimeEncoder),
+        media_type="application/json"
+    )
 
 
 @app.get("/api/v1/history")
@@ -256,18 +277,24 @@ async def api_history():
     Returns per-cycle telemetry array.
     """
     global cycle_telemetry
-    return JSONResponse(content=cycle_telemetry)
+    return Response(
+        content=json.dumps(cycle_telemetry, cls=DateTimeEncoder),
+        media_type="application/json"
+    )
 
 
 @app.get("/api/v1/health")
 async def api_health():
     """Simple health check endpoint."""
-    return JSONResponse(content={
-        'status': 'healthy',
-        'simulation_running': simulation_running,
-        'has_report': completion_report is not None,
-        'telemetry_points': len(cycle_telemetry)
-    })
+    return Response(
+        content=json.dumps({
+            'status': 'healthy',
+            'simulation_running': simulation_running,
+            'has_report': completion_report is not None,
+            'telemetry_points': len(cycle_telemetry)
+        }, cls=DateTimeEncoder),
+        media_type="application/json"
+    )
 
 
 # ── CLI entry point ──────────────────────────────────────────────
