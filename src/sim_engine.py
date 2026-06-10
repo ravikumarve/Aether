@@ -128,8 +128,8 @@ class SimPyEnvironment:
                 self.state.solar_radiation = 0.0
             
             # Calculate power generation based on solar radiation
-            # Assume 20% efficiency and 10m² solar array
-            self.state.power_generation = self.state.solar_radiation * 10 * 0.2
+            # Assume 8% efficiency and 10m² solar array (deliberately low to create resource contention)
+            self.state.power_generation = self.state.solar_radiation * 10 * 0.08
             
             # Update battery level based on net power
             net_power = self.state.power_generation - self.state.power_consumption

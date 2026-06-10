@@ -280,8 +280,8 @@ class SolaraAgent:
             solar_forecast = self.weather_forecaster.forecast_solar_radiation(forecast_horizon)
             
             # Step 3: Calculate power generation forecast
-            # Assume 20% efficiency and 10m² solar array
-            power_forecast = [radiation * 10 * 0.2 for radiation in solar_forecast]
+            # Assume 8% efficiency and 10m² solar array (matching sim_engine)
+            power_forecast = [radiation * 10 * 0.08 for radiation in solar_forecast]
             
             # Step 4: Project battery levels over time
             battery_projection = self._project_battery_levels(
