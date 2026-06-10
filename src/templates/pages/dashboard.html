@@ -53,7 +53,7 @@
                         </div>
                         <div class="metric-row">
                             <span class="label">Goldilocks</span>
-                            <span class="value" :class="isGoldilocks ? 'badge-success' : 'badge-danger'" x-text="isGoldilocks ? '✅ ZONE OK' : '❌ VIOLATION'" style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;font-weight:600;"></span>
+                            <span class="value" :class="isGoldilocks ? 'badge-success' : 'badge-warning'" x-text="isGoldilocks ? '✅ ZONE OK' : '⚠ VIOLATION'" style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;font-weight:600;"></span>
                         </div>
                     </div>
                 </div>
@@ -363,7 +363,7 @@ function dashboardState() {
                     this.totalCycles = data.total_cycles || 0;
 
                     const ps = data.pipeline_summary || {};
-                    this.currentPhase = ps.current_phase || 'idle';
+                    this.currentPhase = (ps.current_phase || 'idle').replace(/_/g, ' ');
                     this.cycleCount = ps.cycle_count || 0;
                     const uptime = ps.uptime || 0;
                     this.uptimeText = uptime < 60 ? uptime.toFixed(1) + 's' : (uptime / 60).toFixed(1) + 'm';
