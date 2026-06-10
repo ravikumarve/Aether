@@ -266,8 +266,8 @@ class SimPyEnvironment:
         return self.state.time.minute == 0
     
     def is_running(self) -> bool:
-        """Check if simulation is still running."""
-        return self.state.battery_level > 0  # Simulation ends if battery dies
+        """Simulation is always running — battery can recharge when sun returns."""
+        return True
     
     def get_environmental_summary(self) -> Dict:
         """Get a summary of the current environmental state."""
