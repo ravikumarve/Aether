@@ -3,6 +3,7 @@ AETHER Agent: Hal-90
 Habitat Mediator & Command - Resolves conflicts and ensures human safety.
 """
 
+import os
 import logging
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
@@ -320,6 +321,10 @@ class Hal90Agent:
         self.safety_override = SafetyProtocolOverride()
         self.resource_arbitrator = ResourceArbitrator()
         self.goldilocks_zone = GoldilocksZone()
+        
+        # Apply env config to Goldilocks Zone
+        hal_90_battery_threshold = float(os.getenv('HAL_90_BATTERY_THRESHOLD', '40.0'))
+        self.goldilocks_zone.battery_min = hal_90_battery_threshold
         
         # State
         self.current_allocation: Optional[ResourceAllocation] = None
