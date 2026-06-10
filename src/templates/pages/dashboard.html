@@ -273,28 +273,43 @@
             </div>
         </div>
 
-        <!-- Live Tab: SVG Mini-Charts -->
+        <!-- Live Tab: Sleek SVG Mini-Charts -->
         <div x-show="tab === 'live'">
-            <div class="history-chart">
-                <div class="sparkline-chart">
-                    <div class="sparkline-chart-label">Battery <span class="mono" style="color:var(--bio-emerald);" x-text="'(' + (env?.battery_level || 0).toFixed(1) + '%)'"></span></div>
-                    <div x-html="sparklineSVG(getCycleValues('battery'), 300, 50, '#10b981', 40)"></div>
+            <div class="history-chart-sleek">
+                <div class="sparkline-sleek">
+                    <div class="sparkline-sleek-label">
+                        <span class="sleek-name">Battery</span>
+                        <span class="mono sleek-val" style="color:var(--bio-emerald);" x-text="(env?.battery_level || 0).toFixed(1) + '%'"></span>
+                    </div>
+                    <div x-html="sparklineSVG(getCycleValues('battery'), 300, 28, '#10b981', 40)"></div>
                 </div>
-                <div class="sparkline-chart">
-                    <div class="sparkline-chart-label">O2 Level <span class="mono" style="color:var(--sun-ray);" x-text="'(' + (env?.o2_level || 0).toFixed(1) + '%)'"></span></div>
-                    <div x-html="sparklineSVG(getCycleValues('o2'), 300, 50, '#fcd34d', 19.5)"></div>
+                <div class="sparkline-sleek">
+                    <div class="sparkline-sleek-label">
+                        <span class="sleek-name">O2 Level</span>
+                        <span class="mono sleek-val" style="color:var(--sun-ray);" x-text="(env?.o2_level || 0).toFixed(1) + '%'"></span>
+                    </div>
+                    <div x-html="sparklineSVG(getCycleValues('o2'), 300, 28, '#fcd34d', 19.5)"></div>
                 </div>
-                <div class="sparkline-chart">
-                    <div class="sparkline-chart-label">Temperature <span class="mono" style="color:var(--cyber-teal);" x-text="'(' + (env?.temperature || 0).toFixed(1) + '°C)'"></span></div>
-                    <div x-html="sparklineSVG(getCycleValues('temperature'), 300, 50, '#22d3ee')"></div>
+                <div class="sparkline-sleek">
+                    <div class="sparkline-sleek-label">
+                        <span class="sleek-name">Temperature</span>
+                        <span class="mono sleek-val" style="color:var(--cyber-teal);" x-text="(env?.temperature || 0).toFixed(1) + '°C'"></span>
+                    </div>
+                    <div x-html="sparklineSVG(getCycleValues('temperature'), 300, 28, '#22d3ee')"></div>
                 </div>
-                <div class="sparkline-chart">
-                    <div class="sparkline-chart-label">Power Gen <span class="mono" style="color:var(--text-muted);" x-text="'(' + (env?.power_generation || 0).toFixed(0) + 'W)'"></span></div>
-                    <div x-html="sparklineSVG(getCycleValues('power_generation'), 300, 50, '#a78bfa')"></div>
+                <div class="sparkline-sleek">
+                    <div class="sparkline-sleek-label">
+                        <span class="sleek-name">Power Gen</span>
+                        <span class="mono sleek-val" style="color:var(--text-muted);" x-text="(env?.power_generation || 0).toFixed(0) + 'W'"></span>
+                    </div>
+                    <div x-html="sparklineSVG(getCycleValues('power_generation'), 300, 28, '#a78bfa')"></div>
                 </div>
-                <div class="sparkline-chart">
-                    <div class="sparkline-chart-label">Power Cons <span class="mono" style="color:var(--text-muted);" x-text="'(' + (env?.power_consumption || 0).toFixed(0) + 'W)'"></span></div>
-                    <div x-html="sparklineSVG(getCycleValues('power_consumption'), 300, 50, '#9ca3af')"></div>
+                <div class="sparkline-sleek">
+                    <div class="sparkline-sleek-label">
+                        <span class="sleek-name">Power Cons</span>
+                        <span class="mono sleek-val" style="color:var(--text-muted);" x-text="(env?.power_consumption || 0).toFixed(0) + 'W'"></span>
+                    </div>
+                    <div x-html="sparklineSVG(getCycleValues('power_consumption'), 300, 28, '#9ca3af')"></div>
                 </div>
             </div>
         </div>

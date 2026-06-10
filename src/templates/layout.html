@@ -629,6 +629,40 @@
             display: block;
         }
 
+        /* Sleek sparkline grid (Live tab) */
+        .history-chart-sleek {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            padding: 0.25rem 0;
+        }
+        .sparkline-sleek {
+            background: rgba(0,0,0,0.12);
+            border-radius: 6px;
+            padding: 0.35rem 0.6rem;
+        }
+        .sparkline-sleek-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.2rem;
+        }
+        .sleek-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+        .sleek-val {
+            font-size: 0.7rem;
+        }
+        .sparkline-sleek svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
         /* Compare overlay charts */
         .compare-chart {
             background: rgba(0,0,0,0.2);
