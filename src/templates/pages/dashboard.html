@@ -345,9 +345,18 @@ function dashboardState() {
             return this.phaseColorMap[this.currentPhase] || 'var(--text-muted)';
         },
 
+        get pollMs() {
+            return this.running ? 1200 : 3000;
+        },
+
         init() {
             this.fetchStatus();
-            this.pollInterval = setInterval(() => this.fetchStatus(), 3000);
+            this.pollInterval = setInterval(() => this.fetchStatus(), this.pollMs);
+        },
+
+        restartPoll() {
+            if (this.pollInterval) clearInterval(this.pollInterval);
+            this.pollInterval = setInterval(() => this.fetchStatus(), this.pollMs);
         },
 
         async fetchStatus() {
@@ -355,6 +364,7 @@ function dashboardState() {
                 const resp = await fetch('/api/v1/status');
                 const data = await resp.json();
 
+                const wasRunning = this.running;
                 if (data.simulation_running) {
                     this.running = true;
                     this.statusText = 'RUNNING';
@@ -368,6 +378,8 @@ function dashboardState() {
                     this.running = false;
                     this.statusText = 'IDLE';
                 }
+                // Adjust polling rate when running state changes
+                if (wasRunning !== this.running) this.restartPoll();
 
                 if (data.status && data.status !== 'idle') {
                     this.status = data;

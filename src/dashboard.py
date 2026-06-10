@@ -54,6 +54,7 @@ logger = logging.getLogger(__name__)
 completion_report: Optional[Dict] = None
 cycle_telemetry: List[Dict] = []
 simulation_running: bool = False
+live_payload: Optional[Dict] = None  # Updated each cycle during simulation for live mode
 
 # MQTT client instance (lazy-initialized on connect)
 mqtt_client_instance: Optional[any] = None
@@ -153,8 +154,9 @@ def _run_simulation(max_cycles: int = 24,
     Returns:
         Tuple of (completion_report_dict, cycle_telemetry_list)
     """
-    global simulation_running
+    global simulation_running, live_payload
     simulation_running = True
+    live_payload = None
 
     # Merge config defaults with overrides
     merged = {**current_config, **(config_overrides or {})}
@@ -271,6 +273,40 @@ def _run_simulation(max_cycles: int = 24,
                 'quality_gates': gate_summary,
             })
 
+            # Update live payload for real-time dashboard display
+            live_payload = {
+                'status': 'RUNNING',
+                'total_cycles': orchestrator.pipeline_state.cycle_count,
+                'anomalies_handled': orchestrator.pipeline_state.anomalies_detected,
+                'emergency_responses': orchestrator.pipeline_state.emergency_responses,
+                'completion_time': datetime.now().isoformat(),
+                'pipeline_summary': {
+                    'current_phase': orchestrator.pipeline_state.current_phase.value,
+                    'cycle_count': orchestrator.pipeline_state.cycle_count,
+                    'anomalies_detected': orchestrator.pipeline_state.anomalies_detected,
+                    'emergency_responses': orchestrator.pipeline_state.emergency_responses,
+                    'uptime': orchestrator.pipeline_state.uptime.total_seconds()
+                        if hasattr(orchestrator.pipeline_state.uptime, 'total_seconds')
+                        else float(orchestrator.pipeline_state.uptime),
+                },
+                'environmental_summary': {
+                    'time': env_summary.get('time', datetime.now().isoformat()),
+                    'battery_level': env_summary['battery_level'],
+                    'o2_level': env_summary['o2_level'],
+                    'temperature': env_summary['temperature'],
+                    'solar_radiation': env_summary['solar_radiation'],
+                    'power_generation': env_summary['power_generation'],
+                    'power_consumption': env_summary['power_consumption'],
+                    'is_goldilocks_zone': env_summary['is_goldilocks_zone'],
+                    'active_anomalies': env_summary['active_anomalies'],
+                },
+                'agent_status': {
+                    name: 'running' if status in ('running', 'complete') else 'idle'
+                    for name, status in orchestrator.pipeline_state.agent_status.items()
+                },
+                'quality_gates': gate_summary,
+            }
+
             # Check for completion
             if orchestrator.pipeline_state.cycle_count >= max_cycles:
                 break
@@ -311,10 +347,17 @@ def _run_simulation(max_cycles: int = 24,
 
 def _get_status_payload() -> Dict:
     """
-    Build the merged status payload from the cached completion report.
+    Build the merged status payload from the cached completion report or live payload.
     Returns a pipeline-state + environmental-summary merged dict.
     """
-    global completion_report
+    global completion_report, live_payload
+
+    # During active simulation, return live per-cycle payload if available
+    if simulation_running and live_payload is not None:
+        return {
+            **live_payload,
+            'simulation_running': True
+        }
 
     if completion_report is None:
         return {
@@ -341,7 +384,7 @@ def _get_status_payload() -> Dict:
             'quality_gates': {},
             'anomalies_handled': 0,
             'emergency_responses': 0,
-            'simulation_running': simulation_running
+            'simulation_running': False
         }
 
     report = completion_report
@@ -355,7 +398,7 @@ def _get_status_payload() -> Dict:
         'emergency_responses': report.get('emergency_responses', 0),
         'total_cycles': report.get('total_cycles', 0),
         'completion_time': report.get('completion_time', ''),
-        'simulation_running': simulation_running
+        'simulation_running': False
     }
 
 
