@@ -1,6 +1,15 @@
 ---
 ## 💾 Session Memory
 
+### 2026-06-10 17:58 - Sprint AETHER-MQTT-1: MQTT Console & Agent Publish Integration
+**Agent:** codebase
+**Summary:** Added MQTT publish calls in orchestrator, MQTT console page in dashboard, sidebar nav + topbar indicator
+- **src/orchestrator.py:** Added `import dataclasses`. Added 3 `if self.mqtt_client:` publish calls via `dataclasses.asdict()`: Solara forecast after quality gate, Veridian request after quality gate, anomaly alert at end of `_handle_anomaly`. Uses `publish_solara_forecast`, `publish_veridian_request`, `publish_anomaly_alert`.
+- **src/dashboard.py:** Added `mqtt_client_instance` var + `MQTT_STATE` dict after existing cache. Added 3 API routes: `GET /api/v1/mqtt/status`, `POST /api/v1/mqtt/connect`, `POST /api/v1/mqtt/disconnect`. Added `GET /mqtt` page route. Wired `mqtt_client_instance` into `_run_simulation()` → passed to `AgentsOrchestrator` if connected.
+- **src/templates/pages/mqtt.html:** New page with connection card (broker, port, Connect/Disconnect), 4 stats tiles (published/received/errors/buffered), topics table (5 AETHER topics), message log, Alpine.js `mqttConsole()` with 3s polling.
+- **src/templates/layout.html:** Added MQTT nav item after History. Added MQTT connection dot in topbar with Alpine.js `mqttConnected` state + 5s polling.
+- **Verification:** 4/4 tests PASS. All 4 MQTT routes return correct JSON. Dashboard starts cleanly. Full pipeline 5/5 quality gates PASS.
+
 ### 2026-06-10 17:34 - Sprint AETHER-HARDEN-1: Wire UI Controls to Simulation Engine
 **Agent:** codebase
 **Summary:** Wired 11 cosmetic dashboard parameters to actually affect simulation behavior
