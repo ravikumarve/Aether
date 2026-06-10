@@ -1,6 +1,23 @@
 ---
 ## 💾 Session Memory
 
+### 2026-06-10 17:34 - Sprint AETHER-HARDEN-1: Wire UI Controls to Simulation Engine
+**Agent:** codebase
+**Summary:** Wired 11 cosmetic dashboard parameters to actually affect simulation behavior
+- **src/sim_engine.py:** Added `array_efficiency` and `battery_capacity` as constructor params with env var fallbacks (`SOLAR_ARRAY_EFFICIENCY`, `BATTERY_CAPACITY`). Replaced hardcoded `0.08` and `10000` in `_solar_day_cycle()`.
+- **src/agents/solara.py:** Changed `max_retries = 3` → `int(os.getenv('SOLARA_MAX_RETRIES', '3'))`.
+- **src/agents/veridian.py:** Changed `max_retries = 3` → `int(os.getenv('VERIDIAN_MAX_RETRIES', '3'))`.
+- **src/agents/hal_90.py:** Made `ConflictResolutionMatrix.__init__` accept `priority_weights` param. Added `update_weights()` method. `_calculate_battery_priority()` and `_calculate_o2_priority()` now multiply by weight. Added `set_priority_weights()` to Hal90Agent. Changed `max_retries = 2` → `int(os.getenv('HAL_90_MAX_RETRIES', '2'))`.
+- **src/dashboard.py:** Expanded `ENV_MAP` from 5 to 10 entries. Wired `array_efficiency`, `battery_capacity`, and `hal90_priority_*` into `_run_simulation()`. Priority weights passed to `orchestrator.hal_90.set_priority_weights()`.
+- **Verification:** All 6 sprint verification tests PASS. 4/4 existing tests PASS. 5/5 quality gates PASS on main.py pipeline. All config parameters correctly affect simulation behavior.
+
+### 2026-06-10 15:12 - Fix: Full layout on direct page refresh
+**Agent:** codebase
+**Summary:** Fixed white-page/blank-render bug when refreshing browser on /settings, /scenarios, /agents, or /history
+- **src/dashboard.py:** Added `_is_htmx()` helper checking `HX-Request` header. All 5 page fragment routes now serve full `layout.html` (with canvas, sidebar, CSS, Alpine.js) when accessed directly (no HTMX header), or return the bare fragment for HTMX sidebar navigation.
+- **src/templates/layout.html:** Changed `main-content` from hardcoded `{% include "pages/dashboard.html" %}` to conditional include based on `initial_page` variable — correct page fragment is embedded at render time for direct access, avoiding flash-of-wrong-content.
+- **Verification:** All 5 routs verified via TestClient — HTMX requests return fragments (no `<html>`), direct requests return full layout (with `<html>`, neural canvas, sidebar). 4/4 tests PASS. 5/5 quality gates PASS on CLI pipeline.
+
 ### 2026-06-10 14:55 - Sprint AETHER-DASH-2: Multi-Page Product Dashboard
 **Agent:** codebase
 **Summary:** Turned single-page dashboard into a real multi-page product with 5-page HTMX navigation, config store, scenario designer, agents console, and history browser
