@@ -728,7 +728,114 @@ async def api_reset_config():
     )
 
 
+# ── Scenario Storage ──
+
+SCENARIOS_DIR = Path(__file__).resolve().parent.parent / "scenarios"
+SCENARIOS_DIR.mkdir(parents=True, exist_ok=True)
+
+def _scenario_path(name: str) -> Path:
+    """Get the filesystem path for a scenario file, sanitizing the name."""
+    safe = name.strip().replace(" ", "_").replace("/", "_").replace("\\", "_")
+    return SCENARIOS_DIR / f"{safe}.json"
+
+def _list_scenarios() -> List[Dict]:
+    """Return list of saved scenario presets with metadata."""
+    results = []
+    if not SCENARIOS_DIR.exists():
+        return results
+    for f in sorted(SCENARIOS_DIR.iterdir()):
+        if f.suffix == ".json":
+            try:
+                data = json.loads(f.read_text())
+                results.append({
+                    "name": f.stem.replace("_", " "),
+                    "filename": f.name,
+                    "saved_at": data.get("_saved_at", ""),
+                    "conditions": {k: v for k, v in data.items() if k != "anomalies" and not k.startswith("_")},
+                    "anomaly_count": len(data.get("anomalies", [])),
+                })
+            except Exception:
+                continue
+    return results
+
 # ── Scenario API ──
+
+
+@app.get("/api/v1/scenarios")
+async def api_list_scenarios():
+    """GET /api/v1/scenarios — List saved scenario presets."""
+    return Response(
+        content=json.dumps(_list_scenarios(), cls=DateTimeEncoder),
+        media_type="application/json"
+    )
+
+
+@app.post("/api/v1/scenarios/save")
+async def api_save_scenario(data: Dict = Body(...)):
+    """
+    POST /api/v1/scenarios/save
+    Body: { "name": "My Scenario", "conditions": {...}, "anomalies": [...] }
+    """
+    name = data.get("name", "").strip()
+    if not name:
+        return Response(
+            content=json.dumps({"status": "error", "message": "Name is required"}),
+            status_code=400,
+            media_type="application/json"
+        )
+    payload = {
+        "_saved_at": datetime.now().isoformat(),
+        "_updated_at": datetime.now().isoformat(),
+        "conditions": data.get("conditions", {}),
+        "anomalies": data.get("anomalies", []),
+    }
+    path = _scenario_path(name)
+    path.write_text(json.dumps(payload, cls=DateTimeEncoder, indent=2))
+    return Response(
+        content=json.dumps({"status": "ok", "name": name, "path": str(path)}),
+        media_type="application/json"
+    )
+
+
+@app.get("/api/v1/scenarios/load/{scenario_name:path}")
+async def api_load_scenario(scenario_name: str):
+    """GET /api/v1/scenarios/load/{name} — Load a saved scenario."""
+    path = _scenario_path(scenario_name)
+    if not path.exists():
+        return Response(
+            content=json.dumps({"status": "error", "message": f"Scenario '{scenario_name}' not found"}),
+            status_code=404,
+            media_type="application/json"
+        )
+    try:
+        data = json.loads(path.read_text())
+        return Response(
+            content=json.dumps({**data, "status": "ok"}, cls=DateTimeEncoder),
+            media_type="application/json"
+        )
+    except Exception as e:
+        return Response(
+            content=json.dumps({"status": "error", "message": str(e)}),
+            status_code=500,
+            media_type="application/json"
+        )
+
+
+@app.delete("/api/v1/scenarios/{scenario_name:path}")
+async def api_delete_scenario(scenario_name: str):
+    """DELETE /api/v1/scenarios/{name} — Delete a saved scenario."""
+    path = _scenario_path(scenario_name)
+    if not path.exists():
+        return Response(
+            content=json.dumps({"status": "error", "message": f"Scenario '{scenario_name}' not found"}),
+            status_code=404,
+            media_type="application/json"
+        )
+    path.unlink()
+    return Response(
+        content=json.dumps({"status": "ok", "message": f"Deleted '{scenario_name}'"}),
+        media_type="application/json"
+    )
 
 
 @app.post("/api/v1/scenario/run")

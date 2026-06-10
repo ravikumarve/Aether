@@ -2,6 +2,35 @@
   <h2 style="font-size:2.5rem;margin-bottom:0.5rem;font-family:'Cormorant Garamond',serif;">Scenario Designer</h2>
   <p style="color:var(--text-muted);margin-bottom:2rem;font-size:1rem;">Customize initial conditions and inject anomalies to test agent responses.</p>
 
+  <!-- Preset Save/Load Bar -->
+  <div class="glass-card" style="margin-bottom:1.25rem;padding:0.8rem 1.2rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+    <span class="mono" style="color:var(--text-muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;">Presets</span>
+
+    <!-- Save -->
+    <input type="text" x-model="presetName" placeholder="Scenario name..."
+           style="flex:1;min-width:150px;padding:0.5rem 0.8rem;background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-main);font-family:'Inter',sans-serif;outline:none;">
+    <button class="btn btn-primary btn-sm" @click="savePreset()" :disabled="!presetName.trim()">
+      <span x-text="saving ? 'Saving...' : '💾 Save Preset'"></span>
+    </button>
+
+    <!-- Load -->
+    <template x-if="presets.length > 0">
+      <div style="display:flex;gap:0.5rem;align-items:center;">
+        <select x-model="selectedPreset" style="padding:0.5rem;background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-main);font-family:'Inter',sans-serif;outline:none;">
+          <option value="">— Load preset —</option>
+          <template x-for="p in presets" :key="p.name">
+            <option x-text="p.name + ' (' + p.anomaly_count + ' anomalies)'" :value="p.name"></option>
+          </template>
+        </select>
+        <button class="btn btn-primary btn-sm" @click="loadPreset(selectedPreset)" :disabled="!selectedPreset">📂 Load</button>
+        <button class="btn btn-sm" style="background:rgba(239,68,68,0.2);color:var(--alert-red);border:1px solid rgba(239,68,68,0.3);" @click="deletePreset(selectedPreset)" :disabled="!selectedPreset" x-show="selectedPreset">🗑 Delete</button>
+      </div>
+    </template>
+
+    <!-- Save Feedback -->
+    <span x-show="savedMsg" x-text="savedMsg" style="font-size:0.8rem;color:var(--bio-emerald);font-family:'JetBrains Mono',monospace;" x-transition.duration.300ms></span>
+  </div>
+
   <!-- Initial Conditions -->
   <div class="glass-card" style="margin-bottom:1.25rem;">
     <div class="card-title">Initial Conditions
@@ -109,17 +138,93 @@ function scenariosState() {
     running: false,
     error: '',
 
-    init() {
+    // Preset management
+    presetName: '',
+    presets: [],
+    selectedPreset: '',
+    saving: false,
+    savedMsg: '',
+
+    async init() {
       fetch('/api/v1/config').then(r => r.json()).then(c => {
         this.conditions.initial_battery = c.initial_battery;
         this.conditions.initial_o2 = c.initial_o2;
         this.conditions.initial_temperature = c.initial_temperature;
         this.conditions.initial_co2 = c.initial_co2;
       });
+      await this.refreshPresets();
     },
 
     addAnomaly() {
       this.anomalies.push({...this.newAnomaly, trigger_cycle: Number(this.newAnomaly.trigger_cycle)});
+    },
+
+    async refreshPresets() {
+      try {
+        const resp = await fetch('/api/v1/scenarios');
+        this.presets = await resp.json();
+      } catch(e) {
+        this.presets = [];
+      }
+    },
+
+    async savePreset() {
+      const name = this.presetName.trim();
+      if (!name) return;
+      this.saving = true;
+      this.savedMsg = '';
+      try {
+        const resp = await fetch('/api/v1/scenarios/save', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            name: name,
+            conditions: this.conditions,
+            anomalies: this.anomalies
+          })
+        });
+        if (resp.ok) {
+          this.savedMsg = '✓ Saved "' + name + '"';
+          this.presetName = '';
+          await this.refreshPresets();
+          this.selectedPreset = name;
+          setTimeout(() => this.savedMsg = '', 3000);
+        }
+      } catch(e) {
+        this.savedMsg = '✗ Save failed';
+      }
+      this.saving = false;
+    },
+
+    async loadPreset(name) {
+      if (!name) return;
+      try {
+        const resp = await fetch('/api/v1/scenarios/load/' + encodeURIComponent(name));
+        const data = await resp.json();
+        if (data.status === 'ok') {
+          this.conditions = {...this.conditions, ...data.conditions};
+          this.anomalies = data.anomalies || [];
+          this.savedMsg = '✓ Loaded "' + name + '"';
+          setTimeout(() => this.savedMsg = '', 3000);
+        }
+      } catch(e) {
+        this.savedMsg = '✗ Load failed';
+      }
+    },
+
+    async deletePreset(name) {
+      if (!name || !confirm('Delete preset "' + name + '"?')) return;
+      try {
+        const resp = await fetch('/api/v1/scenarios/' + encodeURIComponent(name), { method: 'DELETE' });
+        if (resp.ok) {
+          this.selectedPreset = '';
+          this.savedMsg = '✓ Deleted "' + name + '"';
+          setTimeout(() => this.savedMsg = '', 3000);
+          await this.refreshPresets();
+        }
+      } catch(e) {
+        this.savedMsg = '✗ Delete failed';
+      }
     },
 
     async runScenario() {
