@@ -65,43 +65,81 @@
 
   <!-- Anomaly Injection -->
   <div class="glass-card" style="margin-bottom:1.25rem;">
-    <div class="card-title">Anomaly Injection
-      <span class="badge badge-warning">MANUAL</span>
+    <div class="card-title" style="border-bottom:none;padding-bottom:0;margin-bottom:0;">
+      <span>Anomaly Injection</span>
+      <div class="tab-bar" style="gap:0.25rem;">
+        <button class="tab-btn" :class="{ 'active': anomalyMode === 'manual' }" @click="anomalyMode = 'manual'; scriptError = ''" type="button" style="padding:0.2rem 0.8rem;font-size:0.65rem;">Manual</button>
+        <button class="tab-btn" :class="{ 'active': anomalyMode === 'script' }" @click="anomalyMode = 'script'; scriptError = ''" type="button" style="padding:0.2rem 0.8rem;font-size:0.65rem;">Script</button>
+      </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:1rem;align-items:end;">
-      <div>
-        <div class="mono" style="font-size:0.65rem;color:var(--text-muted);margin-bottom:0.3rem;">Type</div>
-        <select x-model="newAnomaly.type" style="width:100%;">
-          <option value="dust_storm">Dust Storm</option>
-          <option value="pressure_leak">Pressure Leak</option>
-          <option value="o2_drop">O2 Drop</option>
-          <option value="temperature_spike">Temperature Spike</option>
-          <option value="solar_flare">Solar Flare</option>
-        </select>
+    <!-- Manual Mode -->
+    <div x-show="anomalyMode === 'manual'">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:1rem;align-items:end;padding-top:1rem;">
+        <div>
+          <div class="mono" style="font-size:0.65rem;color:var(--text-muted);margin-bottom:0.3rem;">Type</div>
+          <select x-model="newAnomaly.type" style="width:100%;">
+            <option value="dust_storm">Dust Storm</option>
+            <option value="pressure_leak">Pressure Leak</option>
+            <option value="o2_drop">O2 Drop</option>
+            <option value="temperature_spike">Temperature Spike</option>
+            <option value="solar_flare">Solar Flare</option>
+          </select>
+        </div>
+        <div>
+          <div class="mono" style="font-size:0.65rem;color:var(--text-muted);margin-bottom:0.3rem;">Severity</div>
+          <input type="range" class="settings-slider" min="0.1" max="1.0" step="0.1" x-model="newAnomaly.severity">
+          <span class="mono" style="font-size:0.75rem;color:var(--text-muted);" x-text="Number(newAnomaly.severity).toFixed(1)"></span>
+        </div>
+        <div>
+          <div class="mono" style="font-size:0.65rem;color:var(--text-muted);margin-bottom:0.3rem;">Trigger Cycle</div>
+          <input type="range" class="settings-slider" min="1" max="50" x-model="newAnomaly.trigger_cycle">
+          <span class="mono" style="font-size:0.75rem;color:var(--text-muted);" x-text="'C' + newAnomaly.trigger_cycle"></span>
+        </div>
+        <button class="btn btn-primary btn-sm" @click="addAnomaly()" style="margin-bottom:2px;">+ Add</button>
       </div>
-      <div>
-        <div class="mono" style="font-size:0.65rem;color:var(--text-muted);margin-bottom:0.3rem;">Severity</div>
-        <input type="range" class="settings-slider" min="0.1" max="1.0" step="0.1" x-model="newAnomaly.severity">
-        <span class="mono" style="font-size:0.75rem;color:var(--text-muted);" x-text="Number(newAnomaly.severity).toFixed(1)"></span>
-      </div>
-      <div>
-        <div class="mono" style="font-size:0.65rem;color:var(--text-muted);margin-bottom:0.3rem;">Trigger Cycle</div>
-        <input type="range" class="settings-slider" min="1" max="50" x-model="newAnomaly.trigger_cycle">
-        <span class="mono" style="font-size:0.75rem;color:var(--text-muted);" x-text="'C' + newAnomaly.trigger_cycle"></span>
-      </div>
-      <button class="btn btn-primary btn-sm" @click="addAnomaly()" style="margin-bottom:2px;">+ Add</button>
     </div>
 
-    <!-- Scheduled Anomalies List -->
+    <!-- Script Mode -->
+    <div x-show="anomalyMode === 'script'" style="padding-top:1rem;">
+      <div class="mono" style="font-size:0.65rem;color:var(--text-muted);margin-bottom:0.4rem;">
+        Write a Python <code style="color:var(--cyber-teal);">generate()</code> function that returns a list of anomaly dicts:
+      </div>
+      <textarea x-model="scriptCode" style="width:100%;min-height:200px;padding:0.8rem;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text-main);font-family:'JetBrains Mono',monospace;font-size:0.75rem;line-height:1.5;resize:vertical;outline:none;tab-size:2;white-space:pre;overflow:auto;" spellcheck="false"></textarea>
+      <div style="display:flex;gap:1rem;align-items:center;margin-top:0.5rem;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" @click="generateFromScript()" :disabled="scriptRunning || !scriptCode.trim()">
+          <span x-text="scriptRunning ? '⟳ Generating...' : '▶ Generate from Script'"></span>
+        </button>
+        <button class="btn btn-sm" @click="resetScript()" style="padding:0.3rem 0.8rem;font-size:0.7rem;">Reset Template</button>
+        <span x-show="scriptError" style="color:var(--alert-red);font-family:'JetBrains Mono',monospace;font-size:0.75rem;" x-text="scriptError"></span>
+        <span x-show="scriptSuccess" style="color:var(--bio-emerald);font-family:'JetBrains Mono',monospace;font-size:0.75rem;" x-text="scriptSuccess"></span>
+      </div>
+
+      <!-- Generate quick reference -->
+      <div style="margin-top:0.75rem;padding:0.6rem;background:rgba(0,0,0,0.15);border-radius:6px;">
+        <div class="mono" style="font-size:0.6rem;color:var(--text-muted);margin-bottom:0.3rem;">QUICK REFERENCE</div>
+        <div style="font-size:0.7rem;color:var(--text-muted);line-height:1.6;font-family:'JetBrains Mono',monospace;">
+          Types: <span style="color:var(--cyber-teal);">dust_storm</span>, <span style="color:var(--cyber-teal);">pressure_leak</span>, <span style="color:var(--cyber-teal);">o2_drop</span>, <span style="color:var(--cyber-teal);">temperature_spike</span>, <span style="color:var(--cyber-teal);">solar_flare</span><br>
+          Each anomaly: <code style="color:var(--sun-ray);">{'type': '...', 'severity': 0.5, 'trigger_cycle': 5}</code><br>
+          Available: <span style="color:var(--bio-emerald);">range()</span>, <span style="color:var(--bio-emerald);">AnomalyType</span> enum, <span style="color:var(--bio-emerald);">min/max/round/len</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scheduled Anomalies List (shared between modes) -->
     <template x-if="anomalies.length > 0">
       <div style="margin-top:1.5rem;border-top:1px solid var(--glass-border);padding-top:1rem;">
-        <div class="mono" style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.5rem;">SCHEDULED ANOMALIES</div>
+        <div class="mono" style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.5rem;">
+          SCHEDULED ANOMALIES <span class="mono" style="font-size:0.6rem;color:var(--text-muted);" x-text="'(' + anomalies.length + ' total)'"></span>
+          <button @click="replaceWithGenerated()" x-show="generatedAnomalies.length > 0" style="float:right;background:rgba(252,211,77,0.15);color:var(--sun-ray);border:1px solid rgba(252,211,77,0.3);border-radius:4px;padding:0.15rem 0.5rem;font-size:0.6rem;cursor:pointer;font-family:'JetBrains Mono',monospace;">Use Generated</button>
+          <button @click="appendGenerated()" x-show="generatedAnomalies.length > 0" style="float:right;background:rgba(16,185,129,0.15);color:var(--bio-emerald);border:1px solid rgba(16,185,129,0.3);border-radius:4px;padding:0.15rem 0.5rem;font-size:0.6rem;cursor:pointer;font-family:'JetBrains Mono',monospace;margin-right:0.5rem;">+ Append Generated</button>
+        </div>
         <template x-for="(a, i) in anomalies" :key="i">
           <div style="display:flex;align-items:center;gap:1rem;padding:0.5rem;background:rgba(0,0,0,0.15);border-radius:8px;margin-bottom:0.4rem;">
             <span style="color:var(--alert-orange);font-weight:600;" x-text="'⚠ ' + a.type.replace(/_/g, ' ')"></span>
             <span class="mono" style="color:var(--text-muted);" x-text="'C' + a.trigger_cycle"></span>
             <span class="mono" style="color:var(--text-muted);" x-text="'severity: ' + Number(a.severity).toFixed(1)"></span>
+            <span x-show="a.description" class="mono" style="color:var(--text-muted);font-size:0.65rem;opacity:0.6;" x-text="a.description"></span>
             <span style="flex:1;"></span>
             <button @click="anomalies.splice(i,1)" style="background:none;border:none;color:var(--alert-red);cursor:pointer;font-size:1.2rem;">✕</button>
           </div>
@@ -138,6 +176,27 @@ function scenariosState() {
     running: false,
     error: '',
 
+    // Script mode
+    anomalyMode: 'manual',
+    scriptCode: '',
+    scriptRunning: false,
+    scriptError: '',
+    scriptSuccess: '',
+    generatedAnomalies: [],
+
+    defaultScript: `def generate():
+    """Generate anomaly schedule: O2 drops every 4 cycles with increasing severity."""
+    schedule = []
+    for cycle in range(4, 24, 4):
+        schedule.append({
+            'type': 'o2_drop',
+            'severity': round(0.2 + cycle * 0.02, 2),
+            'trigger_cycle': cycle,
+            'description': f'Cyclical O2 drop at cycle {cycle}'
+        })
+    return schedule
+`,
+
     // Preset management
     presetName: '',
     presets: [],
@@ -146,6 +205,7 @@ function scenariosState() {
     savedMsg: '',
 
     async init() {
+      this.scriptCode = this.defaultScript;
       fetch('/api/v1/config').then(r => r.json()).then(c => {
         this.conditions.initial_battery = c.initial_battery;
         this.conditions.initial_o2 = c.initial_o2;
@@ -256,6 +316,59 @@ function scenariosState() {
         this.error = e.message;
       }
       this.running = false;
+    },
+
+    // ── Script Methods ──
+
+    async generateFromScript() {
+      this.scriptRunning = true;
+      this.scriptError = '';
+      this.scriptSuccess = '';
+      this.generatedAnomalies = [];
+      try {
+        const resp = await fetch('/api/v1/scenario/script/generate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({script: this.scriptCode})
+        });
+        const data = await resp.json();
+        if (data.error) {
+          this.scriptError = data.error;
+        } else if (data.anomalies.length === 0) {
+          this.scriptError = 'Script generated 0 anomalies';
+        } else {
+          this.generatedAnomalies = data.anomalies;
+          this.scriptSuccess = '✓ Generated ' + data.anomalies.length + ' anomaly/anomalies';
+        }
+      } catch(e) {
+        this.scriptError = 'Request failed: ' + e.message;
+      }
+      this.scriptRunning = false;
+    },
+
+    resetScript() {
+      this.scriptCode = this.defaultScript;
+      this.scriptError = '';
+      this.scriptSuccess = '';
+      this.generatedAnomalies = [];
+    },
+
+    replaceWithGenerated() {
+      this.anomalies = this.generatedAnomalies.map(a => ({...a}));
+      this.scriptSuccess = '✓ Replaced schedule with ' + this.generatedAnomalies.length + ' generated anomaly/anomalies';
+      this.generatedAnomalies = [];
+    },
+
+    appendGenerated() {
+      const existing = new Set(this.anomalies.map(a => a.trigger_cycle + '-' + a.type));
+      const newOnes = this.generatedAnomalies.filter(a => !existing.has(a.trigger_cycle + '-' + a.type));
+      if (newOnes.length === 0) {
+        this.scriptSuccess = '⚠ All generated anomalies already in schedule (skipped duplicates)';
+      } else {
+        this.anomalies = [...this.anomalies, ...newOnes];
+        this.scriptSuccess = '✓ Appended ' + newOnes.length + ' new anomaly/anomalies';
+      }
+      this.generatedAnomalies = [];
     }
   };
 }

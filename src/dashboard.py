@@ -856,6 +856,99 @@ async def api_delete_scenario(scenario_name: str):
     )
 
 
+@app.post("/api/v1/scenario/script/generate")
+async def api_scenario_script_generate(data: Dict = Body(...)):
+    """
+    POST /api/v1/scenario/script/generate
+    Execute a Python script that generates a list of anomaly dicts.
+    Body: { "script": "def generate():\\n    return [{\\"type\\": \\"dust_storm\\", \\"severity\\": 0.5, \\"trigger_cycle\\": 5}]" }
+    Returns: { "anomalies": [...], "error": null }
+    """
+    script: str = data.get('script', '').strip()
+    if not script:
+        return Response(
+            content=json.dumps({"anomalies": [], "error": "Script is empty"}),
+            media_type="application/json"
+        )
+
+    from sim_engine import AnomalyType
+
+    # Restricted builtins — only safe functions
+    safe_builtins = {
+        'True': True, 'False': False, 'None': None,
+        'int': int, 'float': float, 'bool': bool, 'str': str,
+        'len': len, 'list': list, 'dict': dict, 'tuple': tuple,
+        'range': range, 'min': min, 'max': max, 'sum': sum,
+        'abs': abs, 'round': round, 'enumerate': enumerate,
+        'zip': zip, 'reversed': reversed, 'sorted': sorted,
+        'isinstance': isinstance, 'type': type,
+        'AnomalyType': AnomalyType,
+    }
+
+    try:
+        # Compile the script first to catch syntax errors
+        code = compile(script, '<anomaly_script>', 'exec')
+
+        # Exec with restricted globals
+        namespace = {'__builtins__': safe_builtins}
+        exec(code, namespace)
+
+        if 'generate' not in namespace or not callable(namespace['generate']):
+            return Response(
+                content=json.dumps({"anomalies": [], "error": "Script must define a function named 'generate' that returns a list of anomaly dicts"}),
+                media_type="application/json"
+            )
+
+        result = namespace['generate']()
+
+        if not isinstance(result, list):
+            return Response(
+                content=json.dumps({"anomalies": [], "error": "generate() must return a list"}),
+                media_type="application/json"
+            )
+
+        # Validate each anomaly
+        valid_types = {t.value for t in AnomalyType}
+        validated = []
+        for i, a in enumerate(result):
+            if not isinstance(a, dict):
+                return Response(
+                    content=json.dumps({"anomalies": [], "error": f"Item {i} is not a dict"}),
+                    media_type="application/json"
+                )
+            if 'type' not in a or a['type'] not in valid_types:
+                return Response(
+                    content=json.dumps({"anomalies": [], "error": f"Item {i}: invalid or missing 'type'. Valid types: {sorted(valid_types)}"}),
+                    media_type="application/json"
+                )
+            severity = float(a.get('severity', 0.5))
+            severity = max(0.1, min(1.0, severity))
+            trigger = int(a.get('trigger_cycle', 1))
+            trigger = max(1, trigger)
+            validated.append({
+                'type': a['type'],
+                'severity': round(severity, 2),
+                'trigger_cycle': trigger,
+                'description': a.get('description', f"{a['type'].replace('_', ' ').title()} (severity {severity:.1f})"),
+            })
+
+        return Response(
+            content=json.dumps({"anomalies": validated, "error": None}),
+            media_type="application/json"
+        )
+
+    except SyntaxError as e:
+        return Response(
+            content=json.dumps({"anomalies": [], "error": f"Syntax error: {e.msg} (line {e.lineno})"}),
+            media_type="application/json"
+        )
+    except Exception as e:
+        return Response(
+            content=json.dumps({"anomalies": [], "error": f"Runtime error: {str(e)}"}),
+            media_type="application/json"
+        )
+
+
 @app.post("/api/v1/scenario/run")
 async def api_run_scenario(data: Dict = Body(...)):
     """
