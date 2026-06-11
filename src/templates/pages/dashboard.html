@@ -271,6 +271,7 @@
                 <button class="tab-btn" :class="{ 'active': tab === 'live' }" @click="tab = 'live'" type="button">Live</button>
                 <button class="tab-btn" :class="{ 'active': tab === 'history' }" @click="tab = 'history'" type="button">History</button>
                 <button class="tab-btn" :class="{ 'active': tab === 'multirun' }" @click="tab = 'multirun'" type="button">Multi-Run</button>
+                <button class="tab-btn" :class="{ 'active': tab === 'sweep' }" @click="tab = 'sweep'" type="button">Sweep</button>
             </div>
         </div>
 
@@ -432,6 +433,107 @@
                 </div>
             </template>
         </div>
+
+        <!-- Sweep Tab -->
+        <div x-show="tab === 'sweep'">
+            <!-- Config bar -->
+            <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.05);margin-bottom:1rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span class="mono" style="font-size:0.65rem;color:var(--text-muted);">Param</span>
+                    <select x-model="sweepParam" @change="updateSweepBounds()" style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text-main);font-size:0.7rem;padding:0.2rem 0.4rem;font-family:'JetBrains Mono',monospace;">
+                        <template x-for="(def, key) in sweepParams" :key="key">
+                            <option :value="key" x-text="def.label"></option>
+                        </template>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span class="mono" style="font-size:0.65rem;color:var(--text-muted);">Min</span>
+                    <input type="number" x-model="sweepMin" style="width:60px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text-main);font-size:0.7rem;padding:0.2rem 0.4rem;font-family:'JetBrains Mono',monospace;">
+                </div>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span class="mono" style="font-size:0.65rem;color:var(--text-muted);">Max</span>
+                    <input type="number" x-model="sweepMax" style="width:60px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text-main);font-size:0.7rem;padding:0.2rem 0.4rem;font-family:'JetBrains Mono',monospace;">
+                </div>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span class="mono" style="font-size:0.65rem;color:var(--text-muted);">Steps</span>
+                    <input type="range" class="settings-slider" min="2" max="20" x-model="sweepSteps" style="width:80px;">
+                    <span class="mono" style="font-size:0.75rem;color:var(--text-main);" x-text="sweepSteps"></span>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span class="mono" style="font-size:0.65rem;color:var(--text-muted);">Runs/step</span>
+                    <input type="range" class="settings-slider" min="1" max="10" x-model="sweepRunsPerStep" style="width:60px;">
+                    <span class="mono" style="font-size:0.75rem;color:var(--text-main);" x-text="sweepRunsPerStep"></span>
+                </div>
+                <button class="btn btn-primary btn-sm" @click="runSweep()" :disabled="sweepRunning" style="padding:0.3rem 1rem;">
+                    <span x-text="sweepRunning ? '⟳ Sweeping...' : '▶ Run Sweep'"></span>
+                </button>
+                <button class="btn btn-sm" x-show="sweepResult" @click="sweepResult = null" style="padding:0.3rem 0.8rem;font-size:0.7rem;">Clear</button>
+            </div>
+
+            <!-- Results -->
+            <template x-if="sweepResult">
+                <div>
+                    <!-- Sweep info -->
+                    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+                        <span class="mono" style="font-size:0.6rem;color:var(--text-muted);" x-text="'Param: ' + (sweepParams[sweepResult.param]?.label || sweepResult.param)"></span>
+                        <span class="mono" style="font-size:0.6rem;color:var(--text-muted);" x-text="'Range: ' + sweepResult.min + ' → ' + sweepResult.max"></span>
+                        <span class="mono" style="font-size:0.6rem;color:var(--text-muted);" x-text="'Steps: ' + sweepResult.steps + ' × ' + sweepResult.runs_per_step + ' runs = ' + sweepResult.total_simulations + ' simulations'"></span>
+                    </div>
+
+                    <!-- Dual-axis chart: Battery (emerald) + O2 (gold) lines with stddev bands -->
+                    <div style="background:rgba(0,0,0,0.12);border-radius:6px;padding:0.5rem 0.6rem;margin-bottom:1rem;">
+                        <div class="mono" style="font-size:0.6rem;color:var(--text-muted);margin-bottom:0.3rem;">BATTERY (emerald) &amp; O₂ (gold) — line = mean, band = ±1σ</div>
+                        <div x-html="sweepChart"></div>
+                    </div>
+
+                    <!-- Anomaly bars -->
+                    <div style="background:rgba(0,0,0,0.12);border-radius:6px;padding:0.5rem 0.6rem;margin-bottom:1rem;">
+                        <div class="mono" style="font-size:0.6rem;color:var(--text-muted);margin-bottom:0.3rem;">ANOMALIES (orange) &amp; EMERGENCIES (red) per step</div>
+                        <div x-html="sweepAnomalyChart"></div>
+                    </div>
+
+                    <!-- Summary table -->
+                    <div class="mono" style="font-size:0.6rem;color:var(--text-muted);margin-bottom:0.3rem;">PER-STEP DETAILS</div>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:0.6rem;">
+                            <thead>
+                                <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                                    <th style="padding:0.3rem 0.5rem;text-align:left;color:var(--text-muted);">Value</th>
+                                    <th style="padding:0.3rem 0.5rem;text-align:right;color:var(--bio-emerald);">Battery</th>
+                                    <th style="padding:0.3rem 0.5rem;text-align:right;color:var(--sun-ray);">O₂</th>
+                                    <th style="padding:0.3rem 0.5rem;text-align:right;color:var(--alert-orange);">Anom</th>
+                                    <th style="padding:0.3rem 0.5rem;text-align:right;color:var(--alert-red);">Emrg</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(step, i) in sweepResult.step_data" :key="i">
+                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                                        <td style="padding:0.25rem 0.5rem;color:var(--text-main);" x-text="step.value"></td>
+                                        <td style="padding:0.25rem 0.5rem;text-align:right;color:var(--bio-emerald);" x-text="step.aggregates.final_battery.mean + ' ± ' + step.aggregates.final_battery.stddev"></td>
+                                        <td style="padding:0.25rem 0.5rem;text-align:right;color:var(--sun-ray);" x-text="step.aggregates.final_o2.mean + ' ± ' + step.aggregates.final_o2.stddev"></td>
+                                        <td style="padding:0.25rem 0.5rem;text-align:right;color:var(--alert-orange);" x-text="step.aggregates.anomalies_handled.mean"></td>
+                                        <td style="padding:0.25rem 0.5rem;text-align:right;color:var(--alert-red);" x-text="step.aggregates.emergency_responses.mean"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Timestamp -->
+                    <div style="margin-top:0.5rem;">
+                        <span class="mono" style="font-size:0.6rem;color:var(--text-muted);" x-text="'Sweep #' + sweepResult.id + ' — ' + sweepResult.timestamp"></span>
+                    </div>
+                </div>
+            </template>
+            <template x-if="!sweepResult && !sweepRunning">
+                <div class="panel-placeholder">Configure sweep parameters above and press <strong>Run Sweep</strong></div>
+            </template>
+            <template x-if="sweepRunning && !sweepResult">
+                <div class="panel-placeholder" style="text-align:center;">
+                    <span class="loading-pulse"></span> Running sweep: <span x-text="sweepProgress"></span>
+                </div>
+            </template>
+        </div>
     </div>
 
     <!-- Footer -->
@@ -475,6 +577,19 @@ function dashboardState() {
         multiRunning: false,
         multiResult: null,
 
+        // Sweep state
+        sweepParams: {},
+        sweepParam: 'array_efficiency',
+        sweepMin: 5,
+        sweepMax: 25,
+        sweepSteps: 10,
+        sweepRunsPerStep: 3,
+        sweepRunning: false,
+        sweepResult: null,
+        sweepProgress: '',
+        sweepChart: '',
+        sweepAnomalyChart: '',
+
         pollInterval: null,
 
         // Phase → colour mapping for pipeline status
@@ -500,6 +615,31 @@ function dashboardState() {
         init() {
             this.fetchStatus();
             this.pollInterval = setInterval(() => this.fetchStatus(), this.pollMs);
+            this.loadSweepParams();
+        },
+
+        async loadSweepParams() {
+            try {
+                const resp = await fetch('/api/v1/sweep/params');
+                const data = await resp.json();
+                this.sweepParams = data;
+                // Set default min/max from first param
+                this.updateSweepBounds();
+            } catch(e) {}
+        },
+
+        updateSweepBounds() {
+            const def = this.sweepParams[this.sweepParam];
+            if (def) {
+                this.sweepMin = def.default - (def.max - def.min) * 0.2;
+                this.sweepMax = def.default + (def.max - def.min) * 0.2;
+                // Clamp to bounds
+                this.sweepMin = Math.max(def.min, Math.round(this.sweepMin / def.step) * def.step);
+                this.sweepMax = Math.min(def.max, Math.round(this.sweepMax / def.step) * def.step);
+                if (this.sweepMin >= this.sweepMax) {
+                    this.sweepMax = Math.min(def.max, this.sweepMin + def.step * 5);
+                }
+            }
         },
 
         restartPoll() {
@@ -792,6 +932,207 @@ function dashboardState() {
                     '<span class="multi-bar-val" style="color:' + color + ';">' + run.final_battery + '%</span>' +
                     '</div>';
             }).join('');
+        },
+
+        // ── Sweep Methods ──
+
+        async runSweep() {
+            this.sweepRunning = true;
+            this.sweepResult = null;
+            this.sweepProgress = 'Initializing...';
+            try {
+                const def = this.sweepParams[this.sweepParam];
+                const resp = await fetch('/api/v1/sweep', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        param: this.sweepParam,
+                        min: parseFloat(this.sweepMin),
+                        max: parseFloat(this.sweepMax),
+                        steps: parseInt(this.sweepSteps),
+                        runs_per_step: parseInt(this.sweepRunsPerStep),
+                        base_config: {max_cycles: 24}
+                    })
+                });
+                const data = await resp.json();
+                if (data.status === 'ok') {
+                    this.sweepProgress = 'Building charts...';
+                    const result = data.result;
+                    result.sweepChart = this.buildSweepChart(result);
+                    result.sweepAnomalyChart = this.buildSweepAnomalyChart(result);
+                    this.sweepResult = result;
+                    this.sweepChart = result.sweepChart;
+                    this.sweepAnomalyChart = result.sweepAnomalyChart;
+                }
+            } catch(e) {
+                console.warn('Sweep failed:', e);
+            }
+            this.sweepRunning = false;
+            this.sweepProgress = '';
+        },
+
+        /** Build dual-axis sweep chart: battery (emerald) + O2 (gold) with stddev bands */
+        buildSweepChart(result) {
+            const data = result.step_data || [];
+            if (data.length < 2) return '';
+
+            const width = 500, height = 100, padding = {top: 8, bottom: 18, left: 35, right: 35};
+            const chartW = width - padding.left - padding.right;
+            const chartH = height - padding.top - padding.bottom;
+
+            const values = data.map(d => d.value);
+            const batMeans = data.map(d => d.aggregates.final_battery.mean);
+            const batStddevs = data.map(d => d.aggregates.final_battery.stddev);
+            const o2Means = data.map(d => d.aggregates.final_o2.mean);
+            const o2Stddevs = data.map(d => d.aggregates.final_o2.stddev);
+
+            const minV = values[0], maxV = values[values.length - 1];
+            const vRange = maxV - minV || 1;
+
+            const batMin = Math.min(...batMeans.map((m, i) => m - batStddevs[i]), 0);
+            const batMax = Math.max(...batMeans.map((m, i) => m + batStddevs[i]), 0.001);
+            const batRange = batMax - batMin || 1;
+
+            const o2Min = Math.min(...o2Means.map((m, i) => m - o2Stddevs[i]));
+            const o2Max = Math.max(...o2Means.map((m, i) => m + o2Stddevs[i]), 0.001);
+            const o2Range = o2Max - o2Min || 1;
+
+            // Scale functions
+            const sx = (v) => padding.left + (v - minV) / vRange * chartW;
+            const batY = (v) => padding.top + chartH - (v - batMin) / batRange * chartH * 0.95 - chartH * 0.025;
+            const o2Y = (v) => padding.top + chartH - (v - o2Min) / o2Range * chartH * 0.95 - chartH * 0.025;
+
+            let svg = '<svg width="100%" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '" style="display:block;" xmlns="http://www.w3.org/2000/svg">';
+
+            // Y-axis gridlines
+            for (let g = 0; g <= 4; g++) {
+                const y = padding.top + chartH * g / 4;
+                svg += '<line x1="' + padding.left + '" y1="' + y + '" x2="' + (width - padding.right) + '" y2="' + y + '" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>';
+            }
+
+            // Battery stddev band (area path)
+            if (batStddevs.some(s => s > 0)) {
+                let bandPts = '';
+                for (let i = 0; i < data.length; i++) {
+                    const x = sx(values[i]);
+                    const y1 = batY(batMeans[i] + batStddevs[i]);
+                    const y2 = batY(batMeans[i] - batStddevs[i]);
+                    bandPts += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y1.toFixed(1);
+                }
+                for (let i = data.length - 1; i >= 0; i--) {
+                    const x = sx(values[i]);
+                    const y2 = batY(batMeans[i] - batStddevs[i]);
+                    bandPts += 'L' + x.toFixed(1) + ',' + y2.toFixed(1);
+                }
+                bandPts += 'Z';
+                svg += '<path d="' + bandPts + '" fill="rgba(16,185,129,0.15)" stroke="none"/>';
+            }
+
+            // O2 stddev band
+            if (o2Stddevs.some(s => s > 0)) {
+                let bandPts = '';
+                for (let i = 0; i < data.length; i++) {
+                    const x = sx(values[i]);
+                    const y1 = o2Y(o2Means[i] + o2Stddevs[i]);
+                    const y2 = o2Y(o2Means[i] - o2Stddevs[i]);
+                    bandPts += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y1.toFixed(1);
+                }
+                for (let i = data.length - 1; i >= 0; i--) {
+                    const x = sx(values[i]);
+                    const y2 = o2Y(o2Means[i] - o2Stddevs[i]);
+                    bandPts += 'L' + x.toFixed(1) + ',' + y2.toFixed(1);
+                }
+                bandPts += 'Z';
+                svg += '<path d="' + bandPts + '" fill="rgba(252,211,77,0.12)" stroke="none"/>';
+            }
+
+            // Battery line
+            let batPts = data.map((d, i) => {
+                return sx(values[i]).toFixed(1) + ',' + batY(batMeans[i]).toFixed(1);
+            }).join(' ');
+            svg += '<polyline points="' + batPts + '" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+
+            // O2 line
+            let o2Pts = data.map((d, i) => {
+                return sx(values[i]).toFixed(1) + ',' + o2Y(o2Means[i]).toFixed(1);
+            }).join(' ');
+            svg += '<polyline points="' + o2Pts + '" fill="none" stroke="#fcd34d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4,2"/>';
+
+            // Data points (battery)
+            data.forEach((d, i) => {
+                const x = sx(values[i]);
+                const y = batY(batMeans[i]);
+                svg += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="2.5" fill="#10b981" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>';
+            });
+
+            // Data points (O2)
+            data.forEach((d, i) => {
+                const x = sx(values[i]);
+                const y = o2Y(o2Means[i]);
+                svg += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="2" fill="#fcd34d" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>';
+            });
+
+            // X-axis labels
+            const labelStep = Math.max(1, Math.floor(data.length / 6));
+            data.forEach((d, i) => {
+                if (i % labelStep === 0 || i === data.length - 1) {
+                    const x = sx(values[i]);
+                    svg += '<text x="' + x.toFixed(1) + '" y="' + (height - 3) + '" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="8" font-family="JetBrains Mono,monospace">' + d.value + '</text>';
+                }
+            });
+
+            // Legend
+            svg += '<rect x="' + (width - 150) + '" y="2" width="145" height="16" rx="3" fill="rgba(0,0,0,0.3)"/>';
+            svg += '<line x1="' + (width - 142) + '" y1="10" x2="' + (width - 120) + '" y2="10" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>';
+            svg += '<text x="' + (width - 116) + '" y="13" fill="rgba(255,255,255,0.6)" font-size="8" font-family="JetBrains Mono,monospace">Battery</text>';
+            svg += '<line x1="' + (width - 80) + '" y1="10" x2="' + (width - 58) + '" y2="10" stroke="#fcd34d" stroke-width="2" stroke-dasharray="4,2" stroke-linecap="round"/>';
+            svg += '<text x="' + (width - 54) + '" y="13" fill="rgba(255,255,255,0.6)" font-size="8" font-family="JetBrains Mono,monospace">O₂</text>';
+
+            svg += '</svg>';
+            return svg;
+        },
+
+        /** Build anomaly/emergency bar chart for sweep */
+        buildSweepAnomalyChart(result) {
+            const data = result.step_data || [];
+            if (data.length < 1) return '';
+
+            const width = 500, height = 60;
+            const barWidth = Math.min(30, (width - 20) / data.length * 0.6);
+            const gap = (width - 20) / data.length;
+
+            const maxAnom = Math.max(...data.map(d => d.aggregates.anomalies_handled.mean), 0.001);
+            const maxEmrg = Math.max(...data.map(d => d.aggregates.emergency_responses.mean), 0.001);
+
+            let svg = '<svg width="100%" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '" style="display:block;" xmlns="http://www.w3.org/2000/svg">';
+
+            data.forEach((d, i) => {
+                const x = 10 + i * gap + (gap - barWidth) / 2;
+                const anomH = (d.aggregates.anomalies_handled.mean / maxAnom) * (height - 20);
+                const emrgH = (d.aggregates.emergency_responses.mean / maxEmrg) * (height - 20);
+
+                // Anomaly bar (orange)
+                if (anomH > 1) {
+                    svg += '<rect x="' + x.toFixed(1) + '" y="' + (height - 10 - anomH).toFixed(1) + '" width="' + (barWidth * 0.4).toFixed(1) + '" height="' + anomH.toFixed(1) + '" fill="var(--alert-orange)" rx="2" opacity="0.8"/>';
+                }
+                // Emergency bar (red)
+                if (emrgH > 1) {
+                    svg += '<rect x="' + (x + barWidth * 0.5).toFixed(1) + '" y="' + (height - 10 - emrgH).toFixed(1) + '" width="' + (barWidth * 0.4).toFixed(1) + '" height="' + emrgH.toFixed(1) + '" fill="var(--alert-red)" rx="2" opacity="0.8"/>';
+                }
+
+                // X-axis label
+                svg += '<text x="' + (x + barWidth / 2).toFixed(1) + '" y="' + (height - 2) + '" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="6" font-family="JetBrains Mono,monospace">' + d.value + '</text>';
+            });
+
+            // Legend
+            svg += '<rect x="10" y="2" width="90" height="14" rx="3" fill="rgba(0,0,0,0.3)"/>';
+            svg += '<rect x="14" y="5" width="8" height="8" rx="1" fill="var(--alert-orange)" opacity="0.8"/>';
+            svg += '<text x="25" y="12" fill="rgba(255,255,255,0.5)" font-size="7" font-family="JetBrains Mono,monospace">Anom</text>';
+            svg += '<rect x="55" y="5" width="8" height="8" rx="1" fill="var(--alert-red)" opacity="0.8"/>';
+            svg += '<text x="66" y="12" fill="rgba(255,255,255,0.5)" font-size="7" font-family="JetBrains Mono,monospace">Emrg</text>';
+
+            svg += '</svg>';
+            return svg;
         },
 
         destroy() {

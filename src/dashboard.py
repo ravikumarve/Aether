@@ -142,6 +142,20 @@ ENV_MAP: Dict[str, str] = {
     'hal90_retries': 'HAL_90_MAX_RETRIES',
 }
 
+# ── Sweep Parameters ─────────────────────────────────────────────
+# Defines which parameters can be swept and their display metadata
+
+SWEEP_PARAMS: Dict[str, Dict] = {
+    'array_efficiency': {'label': 'Solar Array Efficiency', 'unit': '%', 'min': 1, 'max': 30, 'step': 1, 'default': 8},
+    'battery_capacity': {'label': 'Battery Capacity', 'unit': 'Wh', 'min': 2000, 'max': 20000, 'step': 1000, 'default': 10000},
+    'anomaly_probability': {'label': 'Anomaly Probability', 'unit': '', 'min': 0.01, 'max': 0.5, 'step': 0.02, 'default': 0.05},
+    'initial_battery': {'label': 'Initial Battery', 'unit': '%', 'min': 10, 'max': 100, 'step': 5, 'default': 50.0},
+    'initial_o2': {'label': 'Initial O₂', 'unit': '%', 'min': 15, 'max': 25, 'step': 0.5, 'default': 19.8},
+    'battery_threshold': {'label': 'Battery Threshold', 'unit': '%', 'min': 10, 'max': 80, 'step': 5, 'default': 40},
+    'solar_day_length': {'label': 'Solar Day Length', 'unit': 'h', 'min': 12, 'max': 30, 'step': 1, 'default': 24},
+    'initial_power_consumption': {'label': 'Base Power Consumption', 'unit': 'W', 'min': 200, 'max': 1000, 'step': 50, 'default': 500.0},
+}
+
 
 def _run_simulation(max_cycles: int = 24,
                     config_overrides: Optional[Dict] = None,
@@ -1045,6 +1059,182 @@ async def api_multi_run_clear():
     global multi_run_batches, _batch_counter
     multi_run_batches = {}
     _batch_counter = 0
+    return Response(
+        content=json.dumps({"status": "cleared"}),
+        media_type="application/json"
+    )
+
+
+# ── Sweep API ──
+
+# In-memory storage for sweep results
+sweep_results: Dict[int, Dict] = {}
+_sweep_counter: int = 0
+_sweep_lock = threading.Lock()
+
+
+def _run_sweep(param: str, min_val: float, max_val: float, steps: int,
+               runs_per_step: int = 3, base_config: Optional[Dict] = None) -> Dict:
+    """
+    Run a parameter sweep: vary `param` from `min_val` to `max_val` in `steps` increments,
+    running `runs_per_step` simulations per value. Returns aggregated results.
+    """
+    param_def = SWEEP_PARAMS.get(param)
+    if not param_def:
+        raise ValueError(f"Unknown sweep parameter: {param}")
+
+    step_values = []
+    for i in range(steps):
+        if steps == 1:
+            val = (min_val + max_val) / 2
+        else:
+            val = min_val + (max_val - min_val) * i / (steps - 1)
+        # Round to reasonable precision
+        val = round(val, 4)
+        step_values.append(val)
+
+    step_data = []
+
+    for val in step_values:
+        batteries, o2s, anomalies, emergencies = [], [], [], []
+        run_details = []
+
+        for r in range(runs_per_step):
+            config = dict(base_config or {})
+            config[param] = val
+            report, telemetry = _run_simulation(
+                max_cycles=int(config.get('max_cycles', 24)),
+                config_overrides=config
+            )
+            bat = telemetry[-1]['battery'] if telemetry else 0
+            o2 = telemetry[-1]['o2'] if telemetry else 0
+            anom = report.get('anomalies_handled', 0)
+            emrg = report.get('emergency_responses', 0)
+            batteries.append(bat)
+            o2s.append(o2)
+            anomalies.append(anom)
+            emergencies.append(emrg)
+            run_details.append({
+                'run_index': r,
+                'final_battery': bat,
+                'final_o2': o2,
+                'anomalies_handled': anom,
+                'emergency_responses': emrg,
+            })
+
+        step_data.append({
+            'value': val,
+            'aggregates': {
+                'final_battery': _compute_aggregate(batteries),
+                'final_o2': _compute_aggregate(o2s),
+                'anomalies_handled': _compute_aggregate(anomalies),
+                'emergency_responses': _compute_aggregate(emergencies),
+            },
+            'runs': run_details,
+        })
+
+    return {
+        'param': param,
+        'param_def': param_def,
+        'min': min_val,
+        'max': max_val,
+        'steps': steps,
+        'runs_per_step': runs_per_step,
+        'total_simulations': steps * runs_per_step,
+        'step_data': step_data,
+    }
+
+
+@app.get("/api/v1/sweep/params")
+async def api_sweep_params():
+    """Return available sweep parameters and their metadata."""
+    return Response(
+        content=json.dumps(SWEEP_PARAMS, cls=DateTimeEncoder),
+        media_type="application/json"
+    )
+
+
+@app.post("/api/v1/sweep")
+async def api_sweep(data: Dict = Body(...)):
+    """
+    POST /api/v1/sweep
+    Run a parameter sweep.
+    Body: { "param": "array_efficiency", "min": 1, "max": 30, "steps": 10, "runs_per_step": 3, "base_config": {...} }
+    """
+    global _sweep_counter, simulation_running
+
+    if simulation_running:
+        return Response(
+            content=json.dumps({'status': 'error', 'message': 'Simulation already running'}),
+            status_code=409,
+            media_type="application/json"
+        )
+
+    param = str(data.get('param', ''))
+    param_def = SWEEP_PARAMS.get(param)
+    if not param_def:
+        return Response(
+            content=json.dumps({'status': 'error', 'message': f'Unknown parameter: {param}. Available: {list(SWEEP_PARAMS.keys())}'}),
+            status_code=400,
+            media_type="application/json"
+        )
+
+    min_val = float(data.get('min', param_def['min']))
+    max_val = float(data.get('max', param_def['max']))
+    steps = min(max(int(data.get('steps', 10)), 2), 30)
+    runs_per_step = min(max(int(data.get('runs_per_step', 3)), 1), 10)
+    base_config = data.get('base_config', {})
+
+    # Clamp to param bounds
+    min_val = max(min_val, param_def['min'])
+    max_val = min(max_val, param_def['max'])
+    if min_val >= max_val:
+        max_val = min_val + param_def['step']
+
+    simulation_running = True
+    try:
+        result = _run_sweep(param, min_val, max_val, steps, runs_per_step, base_config)
+    finally:
+        simulation_running = False
+
+    with _sweep_lock:
+        _sweep_counter += 1
+        sweep_id = _sweep_counter
+        entry = {
+            'id': sweep_id,
+            'timestamp': datetime.now().isoformat(),
+            **result,
+        }
+        sweep_results[sweep_id] = entry
+
+    return Response(
+        content=json.dumps({'status': 'ok', 'id': sweep_id, 'result': entry}, cls=DateTimeEncoder),
+        media_type="application/json"
+    )
+
+
+@app.get("/api/v1/sweep/{sweep_id}")
+async def api_sweep_detail(sweep_id: int):
+    """GET /api/v1/sweep/{id} — Full sweep result."""
+    entry = sweep_results.get(sweep_id)
+    if not entry:
+        return Response(
+            content=json.dumps({"error": "sweep result not found"}),
+            status_code=404,
+            media_type="application/json"
+        )
+    return Response(
+        content=json.dumps(entry, cls=DateTimeEncoder),
+        media_type="application/json"
+    )
+
+
+@app.post("/api/v1/sweep/clear")
+async def api_sweep_clear():
+    """Clear all sweep results."""
+    global sweep_results, _sweep_counter
+    sweep_results = {}
+    _sweep_counter = 0
     return Response(
         content=json.dumps({"status": "cleared"}),
         media_type="application/json"
