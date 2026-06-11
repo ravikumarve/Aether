@@ -608,6 +608,46 @@
             height: auto;
         }
 
+        /* Multi-run distribution bars */
+        .multi-distribution {
+            background: rgba(0,0,0,0.12);
+            border-radius: 6px;
+            padding: 0.4rem 0.6rem;
+        }
+        .multi-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.15rem 0;
+        }
+        .multi-bar-label {
+            width: 28px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .multi-bar-bg {
+            flex: 1;
+            height: 8px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .multi-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        .multi-bar-val {
+            width: 40px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
         /* Sparkline mini-charts (Live tab) */
         .sparkline-chart {
             background: rgba(0,0,0,0.15);

@@ -270,6 +270,7 @@
             <div class="tab-bar">
                 <button class="tab-btn" :class="{ 'active': tab === 'live' }" @click="tab = 'live'" type="button">Live</button>
                 <button class="tab-btn" :class="{ 'active': tab === 'history' }" @click="tab = 'history'" type="button">History</button>
+                <button class="tab-btn" :class="{ 'active': tab === 'multirun' }" @click="tab = 'multirun'" type="button">Multi-Run</button>
             </div>
         </div>
 
@@ -352,6 +353,85 @@
                 </div>
             </template>
         </div>
+
+        <!-- Multi-Run Tab -->
+        <div x-show="tab === 'multirun'">
+            <!-- Config bar -->
+            <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.05);margin-bottom:1rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span class="mono" style="font-size:0.65rem;color:var(--text-muted);">Runs</span>
+                    <input type="range" class="settings-slider" min="2" max="20" x-model="multiRunCount" style="width:100px;">
+                    <span class="mono" style="font-size:0.75rem;color:var(--text-main);" x-text="multiRunCount"></span>
+                </div>
+                <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;">
+                    <input type="checkbox" x-model="multiRunRandomize" style="accent-color:var(--bio-emerald);">
+                    <span class="mono" style="font-size:0.65rem;color:var(--text-muted);">Randomize</span>
+                </label>
+                <button class="btn btn-primary btn-sm" @click="runMulti()" :disabled="multiRunning" style="padding:0.3rem 1rem;">
+                    <span x-text="multiRunning ? '⟳ Running...' : '▶ Run ' + multiRunCount + ' Sims'"></span>
+                </button>
+                <button class="btn btn-sm" x-show="multiResult" @click="multiResult = null" style="padding:0.3rem 0.8rem;font-size:0.7rem;">Clear</button>
+            </div>
+
+            <!-- Results -->
+            <template x-if="multiResult">
+                <div>
+                    <!-- Aggregate stat cards -->
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin-bottom:1rem;">
+                        <div style="background:rgba(0,0,0,0.15);padding:0.5rem;border-radius:8px;text-align:center;">
+                            <div class="mono" style="font-size:0.55rem;color:var(--text-muted);">BATTERY (avg)</div>
+                            <div style="font-size:1.2rem;font-family:'JetBrains Mono',monospace;color:var(--bio-emerald);" x-text="multiResult.aggregates.final_battery.mean + '%'"></div>
+                            <div class="mono" style="font-size:0.55rem;color:var(--text-muted);" x-text="'min ' + multiResult.aggregates.final_battery.min + '% / max ' + multiResult.aggregates.final_battery.max + '%'"></div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.15);padding:0.5rem;border-radius:8px;text-align:center;">
+                            <div class="mono" style="font-size:0.55rem;color:var(--text-muted);">O2 (avg)</div>
+                            <div style="font-size:1.2rem;font-family:'JetBrains Mono',monospace;color:var(--sun-ray);" x-text="multiResult.aggregates.final_o2.mean + '%'"></div>
+                            <div class="mono" style="font-size:0.55rem;color:var(--text-muted);" x-text="'min ' + multiResult.aggregates.final_o2.min + '% / max ' + multiResult.aggregates.final_o2.max + '%'"></div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.15);padding:0.5rem;border-radius:8px;text-align:center;">
+                            <div class="mono" style="font-size:0.55rem;color:var(--text-muted);">ANOMALIES</div>
+                            <div style="font-size:1.2rem;font-family:'JetBrains Mono',monospace;color:var(--alert-orange);" x-text="multiResult.aggregates.anomalies_handled.mean"></div>
+                            <div class="mono" style="font-size:0.55rem;color:var(--text-muted);" x-text="'min ' + multiResult.aggregates.anomalies_handled.min + ' / max ' + multiResult.aggregates.anomalies_handled.max"></div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.15);padding:0.5rem;border-radius:8px;text-align:center;">
+                            <div class="mono" style="font-size:0.55rem;color:var(--text-muted);">EMERGENCIES</div>
+                            <div style="font-size:1.2rem;font-family:'JetBrains Mono',monospace;color:var(--alert-red);" x-text="multiResult.aggregates.emergency_responses.mean"></div>
+                            <div class="mono" style="font-size:0.55rem;color:var(--text-muted);" x-text="'min ' + multiResult.aggregates.emergency_responses.min + ' / max ' + multiResult.aggregates.emergency_responses.max"></div>
+                        </div>
+                    </div>
+
+                    <!-- Best/worst badges + stddev -->
+                    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+                        <span class="badge badge-success" style="font-size:0.6rem;">Best: Run #<span x-text="multiResult.best_run.index + 1"></span> — <span x-text="multiResult.best_run.final_battery + '%'"></span> battery</span>
+                        <span class="badge badge-danger" style="font-size:0.6rem;">Worst: Run #<span x-text="multiResult.worst_run.index + 1"></span> — <span x-text="multiResult.worst_run.final_battery + '%'"></span> battery</span>
+                        <span class="mono" style="font-size:0.6rem;color:var(--text-muted);">σ battery: ±<span x-text="multiResult.aggregates.final_battery.stddev"></span>%</span>
+                    </div>
+
+                    <!-- Overlay battery sparkline -->
+                    <div class="mono" style="font-size:0.6rem;color:var(--text-muted);margin-bottom:0.3rem;">BATTERY OVERLAY (all runs)</div>
+                    <div style="background:rgba(0,0,0,0.12);border-radius:6px;padding:0.4rem 0.6rem;margin-bottom:1rem;">
+                        <div x-html="multiResult.overlayChart"></div>
+                    </div>
+
+                    <!-- Run distribution bars -->
+                    <div class="mono" style="font-size:0.6rem;color:var(--text-muted);margin-bottom:0.3rem;">RUN DISTRIBUTION (sorted by final battery)</div>
+                    <div class="multi-distribution" x-html="multiResult.distributionBars"></div>
+
+                    <!-- Full detail link -->
+                    <div style="margin-top:0.5rem;display:flex;gap:1rem;align-items:center;">
+                        <span class="mono" style="font-size:0.6rem;color:var(--text-muted);" x-text="'Batch #' + multiResult.id + ' — ' + multiResult.count + ' runs @ ' + multiResult.timestamp"></span>
+                    </div>
+                </div>
+            </template>
+            <template x-if="!multiResult && !multiRunning">
+                <div class="panel-placeholder">Configure runs above and press <strong>Run N Sims</strong></div>
+            </template>
+            <template x-if="multiRunning && !multiResult">
+                <div class="panel-placeholder" style="text-align:center;">
+                    <span class="loading-pulse"></span> Running <span x-text="multiRunCount"></span> simulations...
+                </div>
+            </template>
+        </div>
     </div>
 
     <!-- Footer -->
@@ -388,6 +468,12 @@ function dashboardState() {
         envTime: '',
         allAgentsOk: true,
         allGatesPass: true,
+
+        // Multi-run state
+        multiRunCount: 5,
+        multiRunRandomize: true,
+        multiRunning: false,
+        multiResult: null,
 
         pollInterval: null,
 
@@ -619,6 +705,93 @@ function dashboardState() {
 
         onSimComplete() {
             setTimeout(() => this.fetchStatus(), 500);
+        },
+
+        // ── Multi-Run Methods ──
+
+        async runMulti() {
+            this.multiRunning = true;
+            this.multiResult = null;
+            try {
+                const resp = await fetch('/api/v1/multi-run', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        count: this.multiRunCount,
+                        randomize: this.multiRunRandomize,
+                        base_config: {max_cycles: 24}
+                    })
+                });
+                const data = await resp.json();
+                if (data.status === 'ok') {
+                    // Fetch full detail with all runs
+                    const detailResp = await fetch('/api/v1/multi-run/' + data.id);
+                    const detail = await detailResp.json();
+                    detail.overlayChart = this.buildMultiOverlay(detail.runs);
+                    detail.distributionBars = this.buildMultiDistribution(detail);
+                    this.multiResult = detail;
+                }
+            } catch(e) {
+                console.warn('Multi-run failed:', e);
+            }
+            this.multiRunning = false;
+        },
+
+        /** Build overlay SVG of all runs' battery traces */
+        buildMultiOverlay(runs) {
+            const width = 400, height = 60;
+            if (!runs || runs.length === 0) return '';
+            const colors = ['#10b981','#fcd34d','#22d3ee','#a78bfa','#f59e0b',
+                            '#ef4444','#34d399','#818cf8','#fb923c','#f472b6',
+                            '#2dd4bf','#e879f9','#fbbf24','#6ee7b7','#67e8f9',
+                            '#c084fc','#fca5a5','#86efac','#d8b4fe','#fdba74'];
+
+            // Find max cycles across all runs
+            const maxCycles = Math.max(...runs.map(r => (r.telemetry || []).length), 2);
+            const allBats = runs.flatMap(r => (r.telemetry || []).map(t => t.battery || 0));
+            const maxV = Math.max(...allBats, 0.001);
+            const minV = Math.min(...allBats, 0);
+            const range = maxV - minV || 1;
+
+            let paths = '';
+            runs.forEach((run, i) => {
+                const tel = run.telemetry || [];
+                const pts = tel.map((t, j) => {
+                    const x = (j / (maxCycles - 1)) * width;
+                    const y = height - ((t.battery || 0) - minV) / range * (height * 0.85) - (height * 0.05);
+                    return x.toFixed(1) + ',' + y.toFixed(1);
+                }).join(' ');
+                if (pts) {
+                    const c = colors[i % colors.length];
+                    paths += '<polyline points="' + pts + '" fill="none" stroke="' + c + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>';
+                }
+            });
+
+            return '<svg width="100%" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '" style="display:block;" xmlns="http://www.w3.org/2000/svg">' +
+                paths +
+                '<line x1="0" y1="0" x2="0" y2="' + height + '" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>' +
+                '<line x1="' + width + '" y1="0" x2="' + width + '" y2="' + height + '" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>' +
+                '</svg>';
+        },
+
+        /** Build distribution bars sorted by final battery */
+        buildMultiDistribution(data) {
+            const runs = (data.runs || []).slice().sort((a, b) => a.final_battery - b.final_battery);
+            if (runs.length === 0) return '';
+            const maxBat = Math.max(...runs.map(r => r.final_battery), 0.001);
+            return runs.map((run, i) => {
+                const pct = (run.final_battery / maxBat * 100);
+                const color = run.final_battery > 40 ? 'var(--bio-emerald)' :
+                             run.final_battery > 20 ? 'var(--sun-ray)' :
+                             run.final_battery > 5 ? 'var(--alert-orange)' : 'var(--alert-red)';
+                const label = 'Run ' + (run.run_index + 1) + ' — ' + run.final_battery + '% bat, ' +
+                             run.anomalies_handled + ' anom, ' + run.emergency_responses + ' emrg';
+                return '<div class="multi-bar-row" title="' + label + '">' +
+                    '<span class="multi-bar-label">#' + (run.run_index + 1) + '</span>' +
+                    '<div class="multi-bar-bg"><div class="multi-bar-fill" style="width:' + pct + '%;background:' + color + ';"></div></div>' +
+                    '<span class="multi-bar-val" style="color:' + color + ';">' + run.final_battery + '%</span>' +
+                    '</div>';
+            }).join('');
         },
 
         destroy() {
