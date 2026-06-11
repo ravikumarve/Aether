@@ -1,6 +1,57 @@
 ---
 ## 💾 Session Memory
 
+### 2026-06-11 16:45 - Phase II Task 11: Agent Decision Trace
+**Agent:** codebase
+**Summary:** Added per-cycle agent decision capture and collapsible decision log in Replay modal
+- **`_capture_agent_decisions()`** — extracts Solara (confidence, threshold, recommendations), Veridian (power_request, o2_target, recommendations), and Hal-90 (mediation_result, power_distribution, safety_verification, override_used) from orchestrator's agent_status after each cycle
+- **Decisions in telemetry** — all 24 cycles now include a `decisions` dict with full agent data
+- **Agent Decisions accordion** in Replay modal — toggle to show/hide 3 agent cards
+- **Solara card** — confidence bar + %, threshold, PASS/LOW badge, warning recommendations
+- **Veridian card** — power request vs threshold comparison, O₂ target, O₂ status badge
+- **Hal-90 card** — mediation result badge, safety verified/unsafe, power distribution micro bar chart (Solara green / Veridian gold / Reserve grey)
+- **No new API routes** — data flows through existing telemetry
+- 4/4 pytest tests pass, 24/24 cycles have decision data
+- Committed and pushed to GitHub
+
+### 2026-06-11 16:30 - Phase II Task 10: Simulation Replay
+**Agent:** codebase
+**Summary:** Added cycle-by-cycle replay player to History page with scrubber, play/pause, and live metric cards
+- **Replay button** on each history row opens a full-screen modal overlay
+- **Cycle scrubber** — range slider 1-N with current/total display, manual seek updates all panels
+- **Play/Pause** — auto-advances at 500ms base interval with ½×, 1×, 2×, 4× speed buttons
+- **4 metric cards** — Battery (emerald % + bar), O₂ (gold % + bar), Temperature (cyan °C), Power (violet W)
+- **Status row** — Goldilocks zone indicator, quality gate badges, active anomaly type badges per cycle
+- **Mini sparkline** — full-run battery SVG with cyan vertical cursor line + dot at current position
+- **No backend changes** — reuses existing `GET /api/v1/history/{id}` telemetry
+- 248 lines added, 4/4 pytest tests pass
+- Committed and pushed to GitHub
+
+### 2026-06-11 16:15 - Phase II Task 9: Custom Anomaly Scripts
+**Agent:** codebase
+**Summary:** Added Python script-based anomaly generation with sandboxed execution, editor UI, and preview
+- **POST /api/v1/scenario/script/generate** — sandboxed `exec()` with safe builtins only (no imports, no file I/O); validates `generate()` function exists, returns list of anomaly dicts with type/severity/cycle validation
+- **Script/Manual toggle** in Scenario Designer — tab bar switching between manual injection and script editor
+- **Code textarea** — 200px monospace editor, pre-loaded with default template showing a loop-based multi-cycle pattern
+- **Generate button** — calls API, shows loading/error/success states
+- **Use Generated / Append Generated** — replace schedule or append with duplicate detection
+- **Quick reference** — shows available anomaly types, builtins, and dict format
+- 8 script API tests PASS, 4/4 pytest tests PASS, all error paths validated (syntax, missing func, invalid type, import blocking)
+- Committed and pushed to GitHub
+
+### 2026-06-11 16:04 - Phase II Task 8: Parameter Sweep
+**Agent:** codebase
+**Summary:** Added parameter sweep engine with dual-axis SVG chart, stddev confidence bands, and anomaly/emergency bar chart
+- **SWEEP_PARAMS dict** — 8 sweepable parameters (array_efficiency, battery_capacity, anomaly_probability, initial_battery, initial_o2, battery_threshold, solar_day_length, power_consumption) with min/max/step/unit metadata
+- **POST /api/v1/sweep** — runs N steps × M runs/step varying one parameter; returns per-step aggregates (mean, min, max, stddev) for battery, O₂, anomalies, emergencies
+- **GET /api/v1/sweep/params** — returns parameter metadata for frontend dropdown
+- **Sweep tab in Cycle History** — param selector (auto-updates bounds), min/max/steps/runs controls, "Run Sweep" button
+- **Dual-axis SVG chart** — battery emerald line with translucent ±1σ band, O₂ gold dashed line with band, data points, legend
+- **Anomaly/emergency bar chart** — grouped orange/red bars per step
+- **Per-step detail table** — value, battery±σ, O₂±σ, anomalies, emergencies
+- 6 sweep API tests PASS, 4/4 pytest tests PASS, battery trend monotonic (9.3%→19.0% across array_efficiency 5→25%)
+- Committed and pushed to GitHub
+
 ### 2026-06-10 19:04 - Phase I Complete: 6/6 tasks (core hardening sprint)
 **Agent:** codebase
 **Summary:** Delivered all 6 Phase I features — colour-coded phases, live mode, SVG sparklines, anomaly timeline, scenario presets, simulation comparison
