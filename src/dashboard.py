@@ -9,6 +9,9 @@ import logging
 import sys
 import json
 import os
+import math
+import random
+import threading
 from datetime import datetime, date, timedelta
 from typing import Dict, List, Optional
 from pathlib import Path
@@ -155,6 +158,7 @@ def _run_simulation(max_cycles: int = 24,
         Tuple of (completion_report_dict, cycle_telemetry_list)
     """
     global simulation_running, live_payload
+    was_running = simulation_running
     simulation_running = True
     live_payload = None
 
@@ -348,7 +352,7 @@ def _run_simulation(max_cycles: int = 24,
                 os.environ[env_key] = original_val
             else:
                 os.environ.pop(env_key, None)
-        simulation_running = False
+        simulation_running = was_running
 
 
 def _get_status_payload() -> Dict:
@@ -882,6 +886,167 @@ async def api_run_scenario(data: Dict = Body(...)):
 
     return Response(
         content=json.dumps(_get_status_payload(), cls=DateTimeEncoder),
+        media_type="application/json"
+    )
+
+
+# ── Multi-Run API ──
+
+# In-memory storage for batch results
+multi_run_batches: Dict[int, Dict] = {}
+_batch_counter: int = 0
+_batch_lock = threading.Lock()
+
+
+def _compute_aggregate(metrics: List[float]) -> Dict:
+    """Compute mean, min, max, stddev for a list of metrics."""
+    n = len(metrics)
+    if n == 0:
+        return {'mean': 0, 'min': 0, 'max': 0, 'stddev': 0}
+    mean = sum(metrics) / n
+    variance = sum((x - mean) ** 2 for x in metrics) / n
+    return {
+        'mean': round(mean, 2),
+        'min': round(min(metrics), 2),
+        'max': round(max(metrics), 2),
+        'stddev': round(math.sqrt(variance), 2)
+    }
+
+
+def _run_with_randomized_config(base_config: Dict, run_index: int) -> tuple:
+    """
+    Run a single simulation with optional randomization applied to base_config.
+    Returns (report, telemetry).
+    """
+    config = dict(base_config)
+    # Add slight randomness to anomaly probability and array efficiency
+    from sim_engine import AnomalyType
+    anomaly_options = [t.value for t in AnomalyType]
+    config['anomaly_probability'] = min(1.0, max(0.01,
+        float(base_config.get('anomaly_probability', 0.15)) * random.uniform(0.5, 1.5)
+    ))
+    config['array_efficiency'] = max(1,
+        float(base_config.get('array_efficiency', 8)) * random.uniform(0.7, 1.3)
+    )
+    # Optionally randomize initial battery
+    if random.random() < 0.5:
+        config['initial_battery'] = random.uniform(30, 80)
+    return _run_simulation(
+        max_cycles=int(base_config.get('max_cycles', 24)),
+        config_overrides=config
+    )
+
+
+@app.post("/api/v1/multi-run")
+async def api_multi_run(data: Dict = Body(...)):
+    """
+    POST /api/v1/multi-run
+    Run N simulations with optional randomization.
+    Body: { "count": 5, "base_config": {...}, "randomize": true }
+    """
+    global _batch_counter, simulation_running
+
+    if simulation_running:
+        return Response(
+            content=json.dumps({'status': 'error', 'message': 'Simulation already running'}),
+            status_code=409,
+            media_type="application/json"
+        )
+
+    count = min(max(int(data.get('count', 5)), 2), 20)
+    randomize = bool(data.get('randomize', True))
+    base_config = data.get('base_config', {})
+
+    runs = []
+    simulation_running = True
+
+    try:
+        for i in range(count):
+            if randomize:
+                report, telemetry = _run_with_randomized_config(base_config, i)
+            else:
+                report, telemetry = _run_simulation(
+                    max_cycles=int(base_config.get('max_cycles', 24)),
+                    config_overrides=base_config
+                )
+            runs.append({
+                'run_index': i,
+                'report': report,
+                'telemetry': telemetry,
+                'final_battery': telemetry[-1]['battery'] if telemetry else 0,
+                'final_o2': telemetry[-1]['o2'] if telemetry else 0,
+                'anomalies_handled': report.get('anomalies_handled', 0),
+                'emergency_responses': report.get('emergency_responses', 0),
+                'total_cycles': report.get('total_cycles', 0),
+                'final_status': report.get('final_status', 'UNKNOWN'),
+            })
+    finally:
+        simulation_running = False
+
+    # Compute aggregates
+    batteries = [r['final_battery'] for r in runs]
+    o2s = [r['final_o2'] for r in runs]
+    anomalies = [r['anomalies_handled'] for r in runs]
+    emergencies = [r['emergency_responses'] for r in runs]
+
+    # Find best/worst run by final battery
+    best = max(runs, key=lambda r: r['final_battery'])
+    worst = min(runs, key=lambda r: r['final_battery'])
+
+    with _batch_lock:
+        _batch_counter += 1
+        batch_id = _batch_counter
+        batch = {
+            'id': batch_id,
+            'timestamp': datetime.now().isoformat(),
+            'count': count,
+            'randomize': randomize,
+            'base_config': base_config,
+            'aggregates': {
+                'final_battery': _compute_aggregate(batteries),
+                'final_o2': _compute_aggregate(o2s),
+                'anomalies_handled': _compute_aggregate(anomalies),
+                'emergency_responses': _compute_aggregate(emergencies),
+            },
+            'best_run': {'index': best['run_index'], 'final_battery': best['final_battery']},
+            'worst_run': {'index': worst['run_index'], 'final_battery': worst['final_battery']},
+            'runs': runs,
+        }
+        multi_run_batches[batch_id] = batch
+
+    # Return summary (without full telemetry per run — too large)
+    summary = {k: v for k, v in batch.items() if k != 'runs'}
+    summary['status'] = 'ok'
+    return Response(
+        content=json.dumps(summary, cls=DateTimeEncoder),
+        media_type="application/json"
+    )
+
+
+@app.get("/api/v1/multi-run/{batch_id}")
+async def api_multi_run_detail(batch_id: int):
+    """GET /api/v1/multi-run/{id} — Full details for a batch including all runs."""
+    batch = multi_run_batches.get(batch_id)
+    if not batch:
+        return Response(
+            content=json.dumps({"error": "batch not found"}),
+            status_code=404,
+            media_type="application/json"
+        )
+    return Response(
+        content=json.dumps(batch, cls=DateTimeEncoder),
+        media_type="application/json"
+    )
+
+
+@app.post("/api/v1/multi-run/clear")
+async def api_multi_run_clear():
+    """Clear all multi-run batch results."""
+    global multi_run_batches, _batch_counter
+    multi_run_batches = {}
+    _batch_counter = 0
+    return Response(
+        content=json.dumps({"status": "cleared"}),
         media_type="application/json"
     )
 
