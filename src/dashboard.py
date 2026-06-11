@@ -157,6 +157,49 @@ SWEEP_PARAMS: Dict[str, Dict] = {
 }
 
 
+def _capture_agent_decisions(orchestrator: any) -> Dict:
+    """
+    Extract key decision data from orchestrator's agent_status for telemetry.
+    Returns a dict with solara, veridian, and/or hal_90 decision summaries.
+    """
+    decisions = {}
+    status = orchestrator.pipeline_state.agent_status
+
+    # Solara decision
+    solara_state = status.get('solara')
+    if solara_state and solara_state.last_output:
+        f = solara_state.last_output
+        decisions['solara'] = {
+            'confidence': round(f.confidence, 3),
+            'threshold': round(f.power_threshold_40pct, 1),
+            'recommendations': f.recommendations[:3],
+        }
+
+    # Veridian decision
+    veridian_state = status.get('veridian')
+    if veridian_state and veridian_state.last_output:
+        r = veridian_state.last_output
+        decisions['veridian'] = {
+            'power_request': round(r.power_requirement_watts, 1),
+            'o2_target': r.o2_target_level,
+            'o2_status': r.o2_status.value if hasattr(r.o2_status, 'value') else str(r.o2_status),
+            'recommendations': r.recommendations[:3],
+        }
+
+    # Hal-90 decision
+    hal90_state = status.get('hal_90')
+    if hal90_state and hal90_state.last_output:
+        a = hal90_state.last_output
+        decisions['hal_90'] = {
+            'mediation_result': a.mediation_result.value if hasattr(a.mediation_result, 'value') else str(a.mediation_result),
+            'power_distribution': a.power_distribution,
+            'safety_verification': a.safety_verification,
+            'override_used': a.override_authority_used,
+        }
+
+    return decisions
+
+
 def _run_simulation(max_cycles: int = 24,
                     config_overrides: Optional[Dict] = None,
                     anomaly_schedule: Optional[List[Dict]] = None) -> tuple:
@@ -296,6 +339,7 @@ def _run_simulation(max_cycles: int = 24,
                 'anomaly_types': active_anomaly_types,
                 'phase': orchestrator.pipeline_state.current_phase.value,
                 'quality_gates': gate_summary,
+                'decisions': _capture_agent_decisions(orchestrator),
             })
 
             # Update live payload for real-time dashboard display

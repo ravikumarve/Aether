@@ -279,6 +279,99 @@
           <div x-html="replaySparkline"></div>
         </div>
 
+        <!-- Agent Decisions Accordion -->
+        <div style="margin-top:1rem;">
+          <div @click="showDecisions = !showDecisions" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.8rem;background:rgba(0,0,0,0.15);border-radius:8px;user-select:none;">
+            <span style="font-size:0.8rem;transition:transform 0.2s;" :style="'display:inline-block;transform:' + (showDecisions ? 'rotate(90deg)' : 'rotate(0deg)')">▸</span>
+            <span class="mono" style="font-size:0.7rem;color:var(--text-muted);">Agent Decisions — Cycle <span x-text="replayCycle"></span></span>
+            <span style="flex:1;"></span>
+            <span class="mono" style="font-size:0.6rem;color:var(--text-muted);" x-show="replayDecisions.solara" x-text="'Conf: ' + replayDecisions.solara?.confidence"></span>
+          </div>
+          <div x-show="showDecisions" style="margin-top:0.5rem;display:flex;flex-direction:column;gap:0.5rem;">
+            <!-- Solara Card -->
+            <template x-if="replayDecisions.solara">
+              <div style="background:rgba(16,185,129,0.06);border-left:3px solid var(--bio-emerald);border-radius:0 8px 8px 0;padding:0.7rem 1rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+                  <span style="font-size:0.7rem;font-weight:600;color:var(--bio-emerald);">☀ Solara — Energy Grid</span>
+                  <span class="badge badge-success" style="font-size:0.5rem;" x-show="replayDecisions.solara.confidence >= 0.85">CONFIDENCE OK</span>
+                  <span class="badge badge-danger" style="font-size:0.5rem;" x-show="replayDecisions.solara.confidence < 0.85">LOW CONFIDENCE</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:0.65rem;font-family:'JetBrains Mono',monospace;">
+                  <div><span style="color:var(--text-muted);">Confidence</span> <span style="color:var(--text-main);" x-text="(replayDecisions.solara.confidence * 100).toFixed(1) + '%'"></span></div>
+                  <div><span style="color:var(--text-muted);">Threshold</span> <span style="color:var(--text-main);" x-text="replayDecisions.solara.threshold + 'W'"></span></div>
+                </div>
+                <div style="height:4px;background:rgba(0,0,0,0.3);border-radius:3px;margin:0.3rem 0;overflow:hidden;">
+                  <div style="height:100%;border-radius:3px;background:var(--bio-emerald);transition:width 0.15s;" :style="'width:' + (replayDecisions.solara.confidence * 100) + '%'"></div>
+                </div>
+                <template x-if="replayDecisions.solara.recommendations && replayDecisions.solara.recommendations.length">
+                  <div style="margin-top:0.3rem;">
+                    <template x-for="(rec, ri) in replayDecisions.solara.recommendations" :key="ri">
+                      <div style="font-size:0.6rem;color:var(--sun-ray);padding:0.1rem 0;">⚠ <span x-text="rec"></span></div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </template>
+
+            <!-- Veridian Card -->
+            <template x-if="replayDecisions.veridian">
+              <div style="background:rgba(252,211,77,0.06);border-left:3px solid var(--sun-ray);border-radius:0 8px 8px 0;padding:0.7rem 1rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+                  <span style="font-size:0.7rem;font-weight:600;color:var(--sun-ray);">🌿 Veridian — Bio-Regenerative</span>
+                  <span class="mono" style="font-size:0.55rem;color:var(--text-muted);" x-text="'O₂ status: ' + replayDecisions.veridian.o2_status"></span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;font-size:0.65rem;font-family:'JetBrains Mono',monospace;">
+                  <div><span style="color:var(--text-muted);">Power Request</span> <span style="color:var(--sun-ray);font-weight:600;" x-text="replayDecisions.veridian.power_request + 'W'"></span></div>
+                  <div><span style="color:var(--text-muted);">O₂ Target</span> <span style="color:var(--text-main);" x-text="replayDecisions.veridian.o2_target + '%'"></span></div>
+                  <div><span style="color:var(--text-muted);">vs Threshold</span> <span style="color:var(--text-main);" x-show="replayDecisions.solara" x-text="replayDecisions.veridian.power_request + 'W vs ' + replayDecisions.solara.threshold + 'W'"></span></div>
+                </div>
+                <template x-if="replayDecisions.veridian.recommendations && replayDecisions.veridian.recommendations.length">
+                  <div style="margin-top:0.3rem;">
+                    <template x-for="(rec, ri) in replayDecisions.veridian.recommendations" :key="ri">
+                      <div style="font-size:0.6rem;color:var(--cyber-teal);padding:0.1rem 0;">ℹ <span x-text="rec"></span></div>
+                    </template>
+                  </div>
+                </template>
+              </div>
+            </template>
+
+            <!-- Hal-90 Card -->
+            <template x-if="replayDecisions.hal_90">
+              <div style="background:rgba(34,211,238,0.06);border-left:3px solid var(--cyber-teal);border-radius:0 8px 8px 0;padding:0.7rem 1rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+                  <span style="font-size:0.7rem;font-weight:600;color:var(--cyber-teal);">⚙ Hal-90 — Mediation</span>
+                  <span class="badge" :class="replayDecisions.hal_90.safety_verification ? 'badge-success' : 'badge-danger'" style="font-size:0.5rem;" x-text="replayDecisions.hal_90.safety_verification ? 'SAFE' : 'UNSAFE'"></span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;font-size:0.65rem;font-family:'JetBrains Mono',monospace;">
+                  <div><span style="color:var(--text-muted);">Result</span> <span style="color:var(--cyber-teal);font-weight:600;text-transform:uppercase;" x-text="replayDecisions.hal_90.mediation_result"></span></div>
+                  <div><span style="color:var(--text-muted);">Override</span> <span x-text="replayDecisions.hal_90.override_used ? '⚠ YES' : 'No'" :style="'color:' + (replayDecisions.hal_90.override_used ? 'var(--alert-red)' : 'var(--text-main)')"></span></div>
+                </div>
+                <!-- Power distribution micro bar -->
+                <template x-if="replayDecisions.hal_90.power_distribution">
+                  <div style="margin-top:0.4rem;">
+                    <div style="display:flex;height:6px;border-radius:3px;overflow:hidden;">
+                      <div x-show="replayDecisions.hal_90.power_distribution.solara > 0" :style="'flex:' + (replayDecisions.hal_90.power_distribution.solara || 0) + ';background:var(--bio-emerald);'" :title="'Solara: ' + (replayDecisions.hal_90.power_distribution.solara || 0).toFixed(0) + 'W'"></div>
+                      <div x-show="replayDecisions.hal_90.power_distribution.veridian > 0" :style="'flex:' + (replayDecisions.hal_90.power_distribution.veridian || 0) + ';background:var(--sun-ray);'" :title="'Veridian: ' + (replayDecisions.hal_90.power_distribution.veridian || 0).toFixed(0) + 'W'"></div>
+                      <div x-show="replayDecisions.hal_90.power_distribution.reserve > 0" :style="'flex:' + (replayDecisions.hal_90.power_distribution.reserve || 0) + ';background:rgba(255,255,255,0.2);'" :title="'Reserve: ' + (replayDecisions.hal_90.power_distribution.reserve || 0).toFixed(0) + 'W'"></div>
+                    </div>
+                    <div style="display:flex;gap:1rem;margin-top:0.2rem;font-size:0.6rem;font-family:'JetBrains Mono',monospace;">
+                      <span style="color:var(--bio-emerald);">■ Solara <span x-text="(replayDecisions.hal_90.power_distribution.solara || 0).toFixed(0) + 'W'"></span></span>
+                      <span style="color:var(--sun-ray);">■ Veridian <span x-text="(replayDecisions.hal_90.power_distribution.veridian || 0).toFixed(0) + 'W'"></span></span>
+                      <span style="color:var(--text-muted);">■ Reserve <span x-text="(replayDecisions.hal_90.power_distribution.reserve || 0).toFixed(0) + 'W'"></span></span>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </template>
+
+            <!-- No decisions fallback -->
+            <div x-show="!replayDecisions.solara && !replayDecisions.veridian && !replayDecisions.hal_90"
+                 style="font-size:0.7rem;color:var(--text-muted);text-align:center;padding:1rem;">
+              No decision data available for this cycle.
+            </div>
+          </div>
+        </div>
+
         <!-- Close -->
         <div style="margin-top:1rem;display:flex;gap:1rem;">
           <button class="btn btn-sm" @click="closeReplay()">Close</button>
@@ -308,6 +401,13 @@ function historyState() {
     replayGates: {},
     replayAnomalyTypes: [],
     replaySparkline: '',
+    showDecisions: false,
+
+    get replayDecisions() {
+      const idx = this.replayCycle - 1;
+      const pt = this.replayTelemetry[idx];
+      return (pt && pt.decisions) || {};
+    },
 
     async loadHistory() {
       try {
