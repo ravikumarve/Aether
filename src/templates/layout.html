@@ -1082,7 +1082,7 @@
                 <a class="nav-item" :class="{ 'active': activeNav === 'dashboard' }"
                    hx-get="/dashboard" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
                    @click="activeNav = 'dashboard'">
-                    <span class="nav-icon">■</span> Dashboard
+                    <span class="nav-icon">⚡</span> Dashboard
                 </a>
                 <a class="nav-item" :class="{ 'active': activeNav === 'settings' }"
                    hx-get="/settings" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
@@ -1097,17 +1097,17 @@
                 <a class="nav-item" :class="{ 'active': activeNav === 'agents' }"
                    hx-get="/agents" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
                    @click="activeNav = 'agents'">
-                    <span class="nav-icon">🤖</span> Agents
+                    <span class="nav-icon">◉</span> Agents
                 </a>
                 <a class="nav-item" :class="{ 'active': activeNav === 'history' }"
                    hx-get="/history" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
                    @click="activeNav = 'history'">
-                    <span class="nav-icon">📊</span> History
+                    <span class="nav-icon">↻</span> History
                 </a>
                 <a class="nav-item" :class="{ 'active': activeNav === 'mqtt' }"
                    hx-get="/mqtt" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
                    @click="activeNav = 'mqtt'">
-                    <span class="nav-icon" style="font-size:0.8rem;">⟐</span> MQTT
+                    <span class="nav-icon" style="font-size:1rem;">◈</span> MQTT
                 </a>
             </nav>
             <div style="padding: 1.5rem; border-top: 1px solid var(--glass-border);">
