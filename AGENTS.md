@@ -1,8 +1,15 @@
 ---
 ## 💾 Session Memory
 
-### 2026-06-11 16:45 - Phase II Task 11: Agent Decision Trace
+### 2026-06-11 17:00 - Phase II Task 12: Hal-90 Mediation Visualizer
 **Agent:** codebase
+**Summary:** Added full-run mediation overview chart to the Replay modal — Phase II is now 100% complete
+- **Mediation Overview accordion** in Replay modal — collapsible section showing all 24 cycles
+- **`buildMediationChart()`** — dual-line SVG (500×100px): Solara threshold (emerald solid line) vs Veridian request (gold dashed), red translucent conflict fill where request > threshold, cyan Hal-90 mediation dot markers, red emergency override markers with ⚠
+- **`buildMediationBars()`** — per-cycle stacked horizontal bars: Solara green (bottom), Veridian gold (middle), Reserve grey (top); cycle labels every 6th cycle
+- **Legend** — 5 items matching all chart element colors
+- No backend changes — reuses existing telemetry `decisions` data
+- 4/4 pytest tests PASS, committed and pushed to GitHub
 **Summary:** Added per-cycle agent decision capture and collapsible decision log in Replay modal
 - **`_capture_agent_decisions()`** — extracts Solara (confidence, threshold, recommendations), Veridian (power_request, o2_target, recommendations), and Hal-90 (mediation_result, power_distribution, safety_verification, override_used) from orchestrator's agent_status after each cycle
 - **Decisions in telemetry** — all 24 cycles now include a `decisions` dict with full agent data

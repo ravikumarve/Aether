@@ -76,15 +76,29 @@
     <!-- Manual Mode -->
     <div x-show="anomalyMode === 'manual'">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:1rem;align-items:end;padding-top:1rem;">
-        <div>
+        <div style="position:relative;" @click.away="typeDropdownOpen = false">
           <div class="mono" style="font-size:0.65rem;color:var(--text-muted);margin-bottom:0.3rem;">Type</div>
-          <select x-model="newAnomaly.type" style="width:100%;">
-            <option value="dust_storm">Dust Storm</option>
-            <option value="pressure_leak">Pressure Leak</option>
-            <option value="o2_drop">O2 Drop</option>
-            <option value="temperature_spike">Temperature Spike</option>
-            <option value="solar_flare">Solar Flare</option>
-          </select>
+          <!-- Custom select trigger -->
+          <div @click="typeDropdownOpen = !typeDropdownOpen"
+               style="cursor:pointer;padding:0.6rem;background:rgba(0,0,0,0.3);border:1px solid var(--glass-border);border-radius:8px;color:var(--text-main);font-family:'Inter',sans-serif;font-size:0.8rem;display:flex;align-items:center;justify-content:space-between;user-select:none;">
+            <span x-text="typeLabels[newAnomaly.type] || 'Dust Storm'"></span>
+            <span style="font-size:0.6rem;color:var(--text-muted);transition:transform 0.2s;" :style="'display:inline-block;transform:' + (typeDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)')">▾</span>
+          </div>
+          <!-- Dropdown panel -->
+          <div x-show="typeDropdownOpen"
+               x-transition.duration.100ms
+               style="position:absolute;top:100%;left:0;right:0;z-index:50;margin-top:4px;background:rgba(10,10,20,0.97);border:1px solid rgba(255,255,255,0.12);border-radius:8px;overflow:hidden;backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,0.6);">
+            <template x-for="(label, val) in typeLabels" :key="val">
+              <div @click="newAnomaly.type = val; typeDropdownOpen = false"
+                   style="cursor:pointer;padding:0.55rem 0.8rem;font-family:'Inter',sans-serif;font-size:0.75rem;color:var(--text-main);transition:background 0.1s;border-bottom:1px solid rgba(255,255,255,0.04);"
+                   :style="'background:' + (newAnomaly.type === val ? 'rgba(16,185,129,0.12)' : 'transparent') + ';'"
+                   @mouseenter="$el.style.background='rgba(255,255,255,0.06)'"
+                   @mouseleave="$el.style.background=newAnomaly.type === val ? 'rgba(16,185,129,0.12)' : 'transparent'">
+                <span x-text="label"></span>
+                <span x-show="newAnomaly.type === val" style="float:right;color:var(--bio-emerald);font-size:0.7rem;">✓</span>
+              </div>
+            </template>
+          </div>
         </div>
         <div>
           <div class="mono" style="font-size:0.65rem;color:var(--text-muted);margin-bottom:0.3rem;">Severity</div>
@@ -183,6 +197,14 @@ function scenariosState() {
     scriptError: '',
     scriptSuccess: '',
     generatedAnomalies: [],
+    typeDropdownOpen: false,
+    typeLabels: {
+      'dust_storm': 'Dust Storm',
+      'pressure_leak': 'Pressure Leak',
+      'o2_drop': 'O2 Drop',
+      'temperature_spike': 'Temperature Spike',
+      'solar_flare': 'Solar Flare',
+    },
 
     defaultScript: `def generate():
     """Generate anomaly schedule: O2 drops every 4 cycles with increasing severity."""
