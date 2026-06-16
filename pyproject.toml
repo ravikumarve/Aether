@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aether-sim"
+version = "1.0.0"
+description = "Multi-agent orchestration framework for autonomous habitat management in extreme environments"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+keywords = ["multi-agent", "simulation", "habitat", "autonomous", "orchestration"]
+authors = [
+    {name = "Ravi Kumar", email = "ravikumar.1690@yahoo.in"},
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+
+dependencies = [
+    "simpy>=4.0.0",
+    "paho-mqtt>=1.6.0",
+    "python-dotenv>=1.0.0",
+    "numpy>=1.24.0",
+]
+
+[project.optional-dependencies]
+dashboard = [
+    "fastapi==0.115.0",
+    "uvicorn[standard]==0.30.0",
+    "jinja2==3.1.4",
+    "python-multipart==0.0.9",
+]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio",
+    "pytest-cov",
+    "ruff",
+    "build",
+]
+
+[project.urls]
+Homepage = "https://github.com/ravikumarve/Aether"
+Repository = "https://github.com/ravikumarve/Aether"
+"Gumroad (Pro)" = "https://gumroad.com/l/aether-pro"
+
+[project.scripts]
+aether = "src.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["src", "src.*"]
