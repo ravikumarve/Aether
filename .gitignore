@@ -33,6 +33,10 @@ ENV/
 .env.local
 .env.*.local
 
+# Node / Playwright screenshot tooling
+node_modules/
+package-lock.json
+
 # IDE
 .vscode/
 .idea/

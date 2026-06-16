@@ -1,0 +1,27 @@
+{
+  "name": "aether",
+  "version": "1.0.0",
+  "description": "> **Multi-agent orchestration framework for autonomous habitat management in extreme environments**",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ravikumarve/aether.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ravikumarve/aether/issues"
+  },
+  "homepage": "https://github.com/ravikumarve/aether#readme",
+  "dependencies": {
+    "playwright": "^1.61.0"
+  }
+}
