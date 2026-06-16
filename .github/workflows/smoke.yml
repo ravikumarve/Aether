@@ -1,0 +1,100 @@
+name: Smoke Test
+
+on:
+  schedule:
+    # Run daily at 06:00 UTC
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      cycles:
+        description: Number of simulation cycles
+        required: true
+        default: "24"
+        type: choice
+        options:
+          - "5"
+          - "12"
+          - "24"
+          - "100"
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  smoke:
+    name: Full Pipeline Smoke Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio
+          pip install -r requirements.txt
+
+      - name: Run full pipeline
+        id: pipeline
+        run: |
+          CYCLES="${{ github.event.inputs.cycles || '24' }}"
+          echo "Running $CYCLES-cycle simulation..."
+          python src/main.py --no-mqtt --cycles "$CYCLES" --verbose 2>&1 | tee pipeline.log
+
+      - name: Verify quality gates
+        run: |
+          echo "=== Verifying quality gate passes ==="
+          if grep -q "FAIL" pipeline.log; then
+            echo "❌ Some quality gates FAILED!"
+            grep -B2 -A2 "FAIL" pipeline.log
+            exit 1
+          fi
+          echo "✅ All quality gates passed"
+
+      - name: Verify completion
+        run: |
+          if grep -q "completed successfully" pipeline.log; then
+            echo "✅ Pipeline completed successfully"
+          else
+            echo "❌ Pipeline did not complete successfully"
+            exit 1
+          fi
+
+      - name: Archive pipeline log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-log
+          path: pipeline.log
+          retention-days: 7
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio pytest-cov
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m pytest tests/ -v --tb=short --cov=src --cov-report=term
